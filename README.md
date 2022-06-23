@@ -22,6 +22,7 @@ Utility that helps you to make peer-to-peer (P2P) swaps of ERC721 tokens. It is 
 
 - [ ] implement time till which swap could be done
 - [ ] restrict functions to be called by either the maker or a taker
+- [ ] move testing scripts to the `/test` folder
 - [ ] emit events (eg. when swap is done - also marks the contract as no longer usable)
 - [ ] implement minimal proxy (for better gas efficiency)
 - [ ] prepare UI which will be simple and which will show active and already executed swaps
