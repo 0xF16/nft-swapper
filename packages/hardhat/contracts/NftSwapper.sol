@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-interface NFT {
+interface ERC721 {
     function safeTransferFrom(
         address from,
         address to,
@@ -12,11 +12,14 @@ interface NFT {
     function ownerOf(uint256 tokenId) external view returns (address);
 }
 
-contract NftSwapper {
-    address public nft1;
-    uint256 public nft1Id;
+error SwapRejected(); //Error that happens when swap ended up with an error
+error OnlyNftOwnersCanExecute(); //Only users who hold specific tokens are permitted to execute this function
 
-    address public nft2;
+contract NftSwapper {
+    ERC721 public nft1Contract;
+    ERC721 public nft2Contract;
+
+    uint256 public nft1Id;
     uint256 public nft2Id;
 
     uint256 timeInvalidAt;
@@ -27,16 +30,14 @@ contract NftSwapper {
         address _nft2,
         uint256 _nft2Id
     ) {
-        nft1 = _nft1;
+        nft1Contract = ERC721(nft1);
+        nft2Contract = ERC721(nft2);
+
         nft1Id = _nft1Id;
-        nft2 = _nft2;
         nft2Id = _nft2Id;
     }
 
-    function swap() public {
-        NFT nft1Contract = NFT(nft1);
-        NFT nft2Contract = NFT(nft2);
-
+    function swap() public makerOrTaker {
         address originalOwnerOfNft1 = nft1Contract.ownerOf(nft1Id);
         address originalOwnerOfNft2 = nft2Contract.ownerOf(nft2Id);
 
@@ -51,10 +52,20 @@ contract NftSwapper {
             nft2Id
         );
 
-        require(
-            nft1Contract.ownerOf(nft1Id) == originalOwnerOfNft2 &&
-                nft2Contract.ownerOf(nft2Id) == originalOwnerOfNft1,
-            "Swap did not execute correctly"
-        );
+        if (
+            nft1Contract.ownerOf(nft1Id) != originalOwnerOfNft2 &&
+            nft2Contract.ownerOf(nft2Id) != originalOwnerOfNft1
+        ) revert SwapRejected();
+    }
+
+    modifier makerOrTaker() {
+        address originalOwnerOfNft1 = nft1Contract.ownerOf(nft1Id);
+        address originalOwnerOfNft2 = nft2Contract.ownerOf(nft2Id);
+
+        if (
+            msg.sender != originalOwnerOfNft1 &&
+            msg.sender != originalOwnerOfNft2
+        ) revert OnlyNftOwnersCanExecute();
+        _;
     }
 }
