@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-interface ERC721 {
+interface ERC721Token {
     function safeTransferFrom(
         address from,
         address to,
@@ -14,15 +14,19 @@ interface ERC721 {
 
 error SwapRejected(); //Error that happens when swap ended up with an error
 error OnlyNftOwnersCanExecute(); //Only users who hold specific tokens are permitted to execute this function
+error SwappedAlready(); //Happens when someone wants to execute the swap on the contract that already has been finished
 
 contract NftSwapper {
-    ERC721 public nft1Contract;
-    ERC721 public nft2Contract;
+    ERC721Token public immutable nft1Contract;
+    ERC721Token public immutable nft2Contract;
 
-    uint256 public nft1Id;
-    uint256 public nft2Id;
+    uint256 public immutable nft1Id;
+    uint256 public immutable nft2Id;
 
     uint256 timeInvalidAt;
+    bool swapSucceeded;
+
+    event SwapSucceeded(address swapContractAddress);
 
     constructor(
         address _nft1,
@@ -30,14 +34,15 @@ contract NftSwapper {
         address _nft2,
         uint256 _nft2Id
     ) {
-        nft1Contract = ERC721(nft1);
-        nft2Contract = ERC721(nft2);
+        nft1Contract = ERC721Token(_nft1);
+        nft2Contract = ERC721Token(_nft2);
 
         nft1Id = _nft1Id;
         nft2Id = _nft2Id;
     }
 
     function swap() public makerOrTaker {
+        if (swapSucceeded == true) revert SwappedAlready();
         address originalOwnerOfNft1 = nft1Contract.ownerOf(nft1Id);
         address originalOwnerOfNft2 = nft2Contract.ownerOf(nft2Id);
 
