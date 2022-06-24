@@ -56,6 +56,7 @@ export default function Contract({
   blockExplorer,
   chainId,
   contractConfig,
+  contractCustomAddress,
 }) {
   const contracts = useContractLoader(provider, contractConfig, chainId);
   let contract;
@@ -65,7 +66,10 @@ export default function Contract({
     contract = customContract;
   }
 
-  const address = contract ? contract.address : "";
+  let address = contract ? contract.address : "";
+  if (contractCustomAddress) {
+    address = contractCustomAddress;
+  }
   const contractIsDeployed = useContractExistsAtAddress(provider, address);
 
   const displayedContractFunctions = useMemo(() => {
