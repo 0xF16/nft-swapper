@@ -58,8 +58,8 @@ contract NftSwapper {
         );
 
         if (
-            nft1Contract.ownerOf(nft1Id) != originalOwnerOfNft2 &&
-            nft2Contract.ownerOf(nft2Id) != originalOwnerOfNft1
+            !(nft1Contract.ownerOf(nft1Id) == originalOwnerOfNft2 &&
+                nft2Contract.ownerOf(nft2Id) == originalOwnerOfNft1)
         ) revert SwapRejected();
     }
 
