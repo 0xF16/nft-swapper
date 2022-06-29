@@ -17,23 +17,23 @@ error OnlyNftOwnersCanExecute(); //Only users who hold specific tokens are permi
 error SwappedAlready(); //Happens when someone wants to execute the swap on the contract that already has been finished
 
 contract NftSwapper {
-    ERC721Token public immutable nft1Contract;
-    ERC721Token public immutable nft2Contract;
+    ERC721Token public nft1Contract;
+    ERC721Token public nft2Contract;
 
-    uint256 public immutable nft1Id;
-    uint256 public immutable nft2Id;
+    uint256 public nft1Id;
+    uint256 public nft2Id;
 
     uint256 timeInvalidAt;
     bool swapSucceeded;
 
     event SwapSucceeded(address swapContractAddress);
 
-    constructor(
+    function create(
         address _nft1,
         uint256 _nft1Id,
         address _nft2,
         uint256 _nft2Id
-    ) {
+    ) public {
         nft1Contract = ERC721Token(_nft1);
         nft2Contract = ERC721Token(_nft2);
 
