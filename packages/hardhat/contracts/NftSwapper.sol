@@ -24,9 +24,9 @@ contract NftSwapper {
     uint256 public nft2Id;
 
     uint256 timeInvalidAt;
-    bool swapSucceeded;
+    bool public swapSucceeded;
 
-    event SwapSucceeded(address swapContractAddress);
+    // event SwapSucceeded(address swapContractAddress);
 
     function create(
         address _nft1,
@@ -61,6 +61,7 @@ contract NftSwapper {
             !(nft1Contract.ownerOf(nft1Id) == originalOwnerOfNft2 &&
                 nft2Contract.ownerOf(nft2Id) == originalOwnerOfNft1)
         ) revert SwapRejected();
+        swapSucceeded = true;
     }
 
     modifier makerOrTaker() {

@@ -1,5 +1,17 @@
-import { Button, Col, Menu, Row } from "antd";
+import { 
+  Button, 
+  Col, 
+  Menu, 
+  Row, 
+  List, 
+  Card, 
+  Avatar, 
+  Checkbox, 
+  Typography,
+  Radio 
+} from "antd";
 import "antd/dist/antd.css";
+
 import {
   useBalance,
   useContractLoader,
@@ -10,6 +22,7 @@ import {
 } from "eth-hooks";
 import { useExchangeEthPrice } from "eth-hooks/dapps/dex";
 import React, { useCallback, useEffect, useState } from "react";
+
 import { Link, Route, Switch, useLocation } from "react-router-dom";
 import "./App.css";
 import {
@@ -23,16 +36,24 @@ import {
   NetworkDisplay,
   FaucetHint,
   NetworkSwitch,
+  Address,
+  AddressInput,
 } from "./components";
 import { NETWORKS, ALCHEMY_KEY } from "./constants";
 import externalContracts from "./contracts/external_contracts";
+import axios from "axios";
+import { useEventListener } from "eth-hooks/events/useEventListener";
 // contracts
 import deployedContracts from "./contracts/hardhat_contracts.json";
 import { Transactor, Web3ModalSetup } from "./helpers";
 import { Home, ExampleUI, Hints, Subgraph } from "./views";
 import { useStaticJsonRPC } from "./hooks";
+import { create } from "ipfs-http-client";
 
 const { ethers } = require("ethers");
+const { BufferList } = require("bl");
+const { Title } = Typography;
+const ipfs = create({ host: "ipfs.infura.io", port: "5001", protocol: "https" });
 /*
     Welcome to 🏗 scaffold-eth !
 
@@ -60,6 +81,19 @@ const DEBUG = true;
 const NETWORKCHECK = true;
 const USE_BURNER_WALLET = true; // toggle burner wallet feature
 const USE_NETWORK_SELECTOR = false;
+const NFT_SWAPPER_FACTORY_ADDRESS = '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9';
+const NFT_ADDRESS = '0x610178dA211FEF7D417bC0e6FeD39F05609AD788';
+
+
+const SWAPPER_ABI = [
+    "function swap()",
+    "function nft1Id() view returns (uint256)",
+    "function nft2Id() view returns (uint256)",
+    "function nft1Contract() view returns (address)",
+    "function nft2Contract() view returns (address)",
+    "function swapSucceeded() view returns (bool)"
+]
+
 
 const web3Modal = Web3ModalSetup();
 
@@ -78,6 +112,13 @@ function App(props) {
   const [injectedProvider, setInjectedProvider] = useState();
   const [address, setAddress] = useState();
   const [selectedNetwork, setSelectedNetwork] = useState(networkOptions[0]);
+  const [transferToAddresses, setTransferToAddresses] = useState({});
+  const [onlyMyNfts, setOnlyMyNfts] = useState(false);
+  const [ownedNftForSwap, setOwnedNftForSwap] = useState();
+  const [selectedNftForSwap, setSelectedNftForSwap] = useState();
+  const [nftApprovedForSwap, setNftApprovedForSwap] = useState(false);
+  const [minting, setMinting] = useState(false);
+  const [count, setCount] = useState(1);
   const location = useLocation();
 
   const targetNetwork = NETWORKS[selectedNetwork];
@@ -150,6 +191,159 @@ function App(props) {
 
   // If you want to make 🔐 write transactions to your contracts, use the userSigner:
   const writeContracts = useContractLoader(userSigner, contractConfig, localChainId);
+
+  const offerEvents = useEventListener(readContracts, "NftSwapperFactory", "OfferCreated", localProvider, 1);
+
+  const json = {
+    1: {
+      description: "It's actually a bison?",
+      external_url: "https://austingriffith.com/portfolio/paintings/", // <-- this can link to a page for the specific file too
+      image: "https://austingriffith.com/images/paintings/buffalo.jpg",
+      name: "Buffalo",
+      attributes: [
+        {
+          trait_type: "BackgroundColor",
+          value: "green",
+        },
+        {
+          trait_type: "Eyes",
+          value: "googly",
+        },
+        {
+          trait_type: "Stamina",
+          value: 42,
+        },
+      ],
+    },
+    2: {
+      description: "What is it so worried about?",
+      external_url: "https://austingriffith.com/portfolio/paintings/", // <-- this can link to a page for the specific file too
+      image: "https://austingriffith.com/images/paintings/zebra.jpg",
+      name: "Zebra",
+      attributes: [
+        {
+          trait_type: "BackgroundColor",
+          value: "blue",
+        },
+        {
+          trait_type: "Eyes",
+          value: "googly",
+        },
+        {
+          trait_type: "Stamina",
+          value: 38,
+        },
+      ],
+    },
+    3: {
+      description: "What a horn!",
+      external_url: "https://austingriffith.com/portfolio/paintings/", // <-- this can link to a page for the specific file too
+      image: "https://austingriffith.com/images/paintings/rhino.jpg",
+      name: "Rhino",
+      attributes: [
+        {
+          trait_type: "BackgroundColor",
+          value: "pink",
+        },
+        {
+          trait_type: "Eyes",
+          value: "googly",
+        },
+        {
+          trait_type: "Stamina",
+          value: 22,
+        },
+      ],
+    },
+    4: {
+      description: "Is that an underbyte?",
+      external_url: "https://austingriffith.com/portfolio/paintings/", // <-- this can link to a page for the specific file too
+      image: "https://austingriffith.com/images/paintings/fish.jpg",
+      name: "Fish",
+      attributes: [
+        {
+          trait_type: "BackgroundColor",
+          value: "blue",
+        },
+        {
+          trait_type: "Eyes",
+          value: "googly",
+        },
+        {
+          trait_type: "Stamina",
+          value: 15,
+        },
+      ],
+    },
+    5: {
+      description: "So delicate.",
+      external_url: "https://austingriffith.com/portfolio/paintings/", // <-- this can link to a page for the specific file too
+      image: "https://austingriffith.com/images/paintings/flamingo.jpg",
+      name: "Flamingo",
+      attributes: [
+        {
+          trait_type: "BackgroundColor",
+          value: "black",
+        },
+        {
+          trait_type: "Eyes",
+          value: "googly",
+        },
+        {
+          trait_type: "Stamina",
+          value: 6,
+        },
+      ],
+    },
+    6: {
+      description: "Raaaar!",
+      external_url: "https://austingriffith.com/portfolio/paintings/", // <-- this can link to a page for the specific file too
+      image: "https://austingriffith.com/images/paintings/godzilla.jpg",
+      name: "Godzilla",
+      attributes: [
+        {
+          trait_type: "BackgroundColor",
+          value: "orange",
+        },
+        {
+          trait_type: "Eyes",
+          value: "googly",
+        },
+        {
+          trait_type: "Stamina",
+          value: 99,
+        },
+      ],
+    },
+  };
+
+  const mintItem = async () => {
+    // upload to ipfs
+    const uploaded = await ipfs.add(JSON.stringify(json[count]));
+    setCount(count + 1);
+    console.log("Uploaded Hash: ", uploaded);
+    const result = tx(
+      writeContracts &&
+        writeContracts.SampleNft &&
+        writeContracts.SampleNft.mintItem(address, uploaded.path),
+      update => {
+        console.log("📡 Transaction Update:", update);
+        if (update && (update.status === "confirmed" || update.status === 1)) {
+          console.log(" 🍾 Transaction " + update.hash + " finished!");
+          console.log(
+            " ⛽️ " +
+              update.gasUsed +
+              "/" +
+              (update.gasLimit || update.gas) +
+              " @ " +
+              parseFloat(update.gasPrice) / 1000000000 +
+              " gwei",
+          );
+        }
+      },
+    );
+  };
+
 
   // EXTERNAL CONTRACT EXAMPLE:
   //
@@ -235,7 +429,7 @@ function App(props) {
     });
     // eslint-disable-next-line
   }, [setInjectedProvider]);
-
+// 
   useEffect(() => {
     if (web3Modal.cachedProvider) {
       loadWeb3Modal();
@@ -243,6 +437,33 @@ function App(props) {
   }, [loadWeb3Modal]);
 
   const faucetAvailable = localProvider && localProvider.connection && targetNetwork.name.indexOf("local") !== -1;
+
+  const [allCollectibles, setAllCollectibles] = useState([]);
+  const allNfts = useContractReader(readContracts, "SampleNft", "totalSupply");
+  useEffect(() => {
+    const getAllNfts = async () => {
+      const allNftsArr = [];
+      for (let tokenIndex = 0; tokenIndex < parseInt(allNfts); tokenIndex++) {
+        try {
+          const tokenId = await readContracts.SampleNft.tokenByIndex(tokenIndex);
+          const owner = await readContracts.SampleNft.ownerOf(tokenId);
+          const tokenURI = await readContracts.SampleNft.tokenURI(tokenId);
+        
+          try {
+            const { data } = await axios.get(tokenURI);
+            allNftsArr.push({ id: tokenId, uri: tokenURI, owner, ...data });
+          } catch (e) {
+            console.log(e);
+          }
+        } catch (e) {
+          console.log('[AK] failed at index ' + tokenIndex + ' ' + e);
+        }
+      }
+      setAllCollectibles(allNftsArr);
+    }
+    getAllNfts();
+  }, [allNfts]);
+
 
   return (
     <div className="App">
@@ -293,6 +514,12 @@ function App(props) {
         {/* <Menu.Item key="/ui">
           <Link to="/ui">UI</Link>
         </Menu.Item> */}
+        <Menu.Item key="/nfts">
+          <Link to="/nfts">NFT collection</Link>
+        </Menu.Item>
+        <Menu.Item key="/nft-swapper">
+          <Link to="/nft-swapper">NFT Swapper</Link>
+        </Menu.Item>
         <Menu.Item key="/nft">
           <Link to="/nft">Sample NFT Contract</Link>
         </Menu.Item>
@@ -328,6 +555,220 @@ function App(props) {
             readContracts={readContracts}
             purpose={purpose}
           /> */}
+        </Route>
+        <Route path="/nfts">
+          <div style={{ width: 640, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
+              <Button
+                disabled={minting}
+                size="large"
+                onClick={() => {
+                  mintItem();
+                }}
+                
+              >
+                MINT NFT
+              </Button>
+              <Button
+                size="large"
+                type={onlyMyNfts ? "primary" : "default"}
+                onClick={() => {
+                  setOnlyMyNfts(!onlyMyNfts);
+                }}
+              >
+                Show only my NFTs
+              </Button>
+            </div>
+            <div style={{ width: 640, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
+              <List
+                bordered
+                dataSource={onlyMyNfts ? allCollectibles.filter(nft => nft.owner === address) : allCollectibles}
+                renderItem={item => {
+                  const id = item.id.toNumber();
+                  return (
+                    <List.Item key={id + "_" + item.uri + "_" + item.owner}>
+                      <Card
+                        title={
+                          <div>
+                            <span style={{ fontSize: 16, marginRight: 8 }}>#{id}</span> {item.name}
+                          </div>
+                        }
+                      >
+                        <div>
+                          <img src={item.image} style={{ maxWidth: 150 }} />
+                        </div>
+                        <div>{item.description}</div>
+                      </Card>
+
+                      <div>
+                        owner:{" "}
+                        <Address
+                          address={item.owner}
+                          ensProvider={mainnetProvider}
+                          blockExplorer={blockExplorer}
+                          fontSize={16}
+                        />
+                        <AddressInput
+                          ensProvider={mainnetProvider}
+                          placeholder="transfer to address"
+                          value={transferToAddresses[id]}
+                          onChange={newValue => {
+                            const update = {};
+                            update[id] = newValue;
+                            setTransferToAddresses({ ...transferToAddresses, ...update });
+                          }}
+                        />
+                        <Button
+                          onClick={() => {
+                            console.log("writeContracts", writeContracts);
+                            tx(writeContracts.SampleNft.transferFrom(address, transferToAddresses[id], id));
+                          }}
+                        >
+                          Transfer
+                        </Button>
+
+                      </div>
+                    </List.Item>
+                  );
+                }}
+              />
+            </div>
+        </Route>
+        <Route path="/nft-swapper">
+          <div style={{ marginTop: 32, paddingBottom: 32, paddingRight: 32, paddingLeft: 32 }}>
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                  <Title level={4}>Your NFTs</Title>
+                  <List
+                    bordered
+                    dataSource={allCollectibles.filter(nft => nft.owner === address)}
+                    renderItem={item => {
+                      const id = item.id.toNumber();
+                      return (
+                        <List.Item key={id + "_" + item.uri + "_" + item.owner}>
+                          <Checkbox 
+                            style={{marginRight: 20}}
+                            onChange={async () => {
+                              const approvedAddress = await readContracts.SampleNft.getApproved(id);
+                              if (parseInt(approvedAddress) !== 0) {
+                                // [AK] change this to check specific swapper address
+                                setNftApprovedForSwap(true);
+                              } else {
+                                setNftApprovedForSwap(false);
+                              }
+                              // const nftSwapperAddress = await readContracts.NftSwapper
+                              setOwnedNftForSwap(id)
+                            }}
+                            >
+                          </Checkbox>
+                          <List.Item.Meta
+                            avatar={<Avatar shape="square" src={item.image} />}
+                            title={item.name}
+                            />
+                          
+                        </List.Item>
+                      )
+                    }}
+                    />
+              </Col>
+              <Col xs={24} md={12}>
+                  <Title level={4}>Swap for</Title>
+                  <List
+                    bordered
+                    dataSource={allCollectibles.filter(nft => nft.owner !== address)}
+                    renderItem={item => {
+                      const id = item.id.toNumber();
+                      return (
+                        <List.Item key={id + "_" + item.uri + "_" + item.owner}>
+                          <Checkbox 
+                            style={{marginRight: 20}}
+                            onChange={() => setSelectedNftForSwap(id)}
+                          >
+                          </Checkbox>
+                          <List.Item.Meta
+                            avatar={<Avatar shape="square" src={item.image} />}
+                            title={item.name}
+                          />
+                        </List.Item>
+                      )
+                    }}
+                  />
+              </Col>
+            <div style={{width: 900, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
+              <Button
+                // disabled={nftApprovedForSwap}
+                onClick={async() => {
+                  if (!ownedNftForSwap || !selectedNftForSwap) return;
+                  tx(writeContracts.NftSwapperFactory.clone(NFT_ADDRESS, ownedNftForSwap, NFT_ADDRESS, selectedNftForSwap));
+                  // setNftApprovedForSwap(true)
+                }}
+              >
+                Create offer
+              </Button>
+              {/* <Button
+                disabled={nftApprovedForSwap}
+                onClick={async() => {
+                  if (!ownedNftForSwap) return;
+                  tx(await writeContracts.SampleNft.approve('0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9', ownedNftForSwap));
+                  setNftApprovedForSwap(true)
+                }}
+              >
+                Approve NFT
+              </Button> */}
+            </div>
+            </Row>
+            <Row>
+              <Col>
+                <Title level={3}>Offers</Title>
+                <List
+                  dataSource={offerEvents.map(async (item) => {
+                    const contract = new ethers.Contract(item.args[2], SWAPPER_ABI, userSigner);
+                    const myCollectibles = allCollectibles.filter(nft => nft.owner === address).map(nft => nft.id.toNumber());
+                    // return true;
+                    const swapSucceded = await contract.swapSucceeded();
+                    if (myCollectibles.indexOf(item.args[1].toNumber()) !== -1 && swapSucceded == false) {
+                      return true;
+                    } 
+                  })}
+                  renderItem={item => {
+                    return (
+                      <List.Item key={item.blockNumber}>
+                        <Title level={4}>ID: {item.args[1].toNumber()}</Title>
+                        <Title level={4}>NFT address:</Title>
+                        <Address value={ item.args[0]} ensProvider={mainnetProvider} fontSize={16} />
+                        <Title level={4}>Contract address: </Title>
+                        <Address value={item.args[2]} ensProvider={mainnetProvider} fontSize={16} />
+                        <Button
+                          onClick={() => {
+                            tx(writeContracts.SampleNft.approve(item.args[2], item.args[1]));
+                          }}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          onClick={async () => {
+                            try {
+                              const contract = new ethers.Contract(item.args[2], SWAPPER_ABI, userSigner)
+                              console.log(await contract.nft1Id());
+                              console.log(await contract.nft2Id());
+                              console.log(await contract.nft1Contract());
+                              console.log(await contract.nft2Contract());
+                              console.log(await contract.swap());
+
+                            }catch(e) {
+                              console.error(e);  
+                            }
+                          }}
+                        >
+                          Swap
+                        </Button>
+                      </List.Item>
+                    );
+                  }}
+                />
+              </Col>
+            </Row>
+          
+          </div>
         </Route>
         <Route path="/nft">
           <Contract
