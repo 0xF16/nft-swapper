@@ -15,6 +15,7 @@ interface ERC721Token {
 error SwapRejected(); //Error that happens when swap ended up with an error
 error OnlyNftOwnersCanExecute(); //Only users who hold specific tokens are permitted to execute this function
 error SwappedAlready(); //Happens when someone wants to execute the swap on the contract that already has been finished
+error SwapCancelled(); // Happens when someone wants to execute the swap on the contract that has been cancelled
 
 contract NftSwapper {
     ERC721Token public nft1Contract;
@@ -25,6 +26,7 @@ contract NftSwapper {
 
     uint256 timeInvalidAt;
     bool public swapSucceeded;
+    bool public swapCancelled;
 
     // event SwapSucceeded(address swapContractAddress);
 
@@ -41,8 +43,13 @@ contract NftSwapper {
         nft2Id = _nft2Id;
     }
 
+    function cancelSwap() public makerOrTaker {
+        swapCancelled = true;
+    }
+
     function swap() public makerOrTaker {
         if (swapSucceeded == true) revert SwappedAlready();
+        if (swapCancelled == true) revert SwapCancelled();
         address originalOwnerOfNft1 = nft1Contract.ownerOf(nft1Id);
         address originalOwnerOfNft2 = nft2Contract.ownerOf(nft2Id);
 
