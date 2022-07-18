@@ -18,6 +18,8 @@ error SwappedAlready(); //Happens when someone wants to execute the swap on the 
 error SwapCancelled(); // Happens when someone wants to execute the swap on the contract that has been cancelled
 
 contract NftSwapper {
+    address factoryAddress;
+
     ERC721Token public nft1Contract;
     ERC721Token public nft2Contract;
 
@@ -34,22 +36,26 @@ contract NftSwapper {
         address _nft1,
         uint256 _nft1Id,
         address _nft2,
-        uint256 _nft2Id
+        uint256 _nft2Id,
+        address _factoryAddress
     ) public {
         nft1Contract = ERC721Token(_nft1);
         nft2Contract = ERC721Token(_nft2);
 
         nft1Id = _nft1Id;
         nft2Id = _nft2Id;
+
+        factoryAddress  = payable(_factoryAddress);
     }
 
     function cancelSwap() public makerOrTaker {
         swapCancelled = true;
     }
 
-    function swap() public makerOrTaker {
+    function swap() public payable makerOrTaker {
         if (swapSucceeded == true) revert SwappedAlready();
         if (swapCancelled == true) revert SwapCancelled();
+        require(msg.value >= 0.01 ether, "You have to send at least 0.01 Ether to execute this transaction");
         address originalOwnerOfNft1 = nft1Contract.ownerOf(nft1Id);
         address originalOwnerOfNft2 = nft2Contract.ownerOf(nft2Id);
 
@@ -68,6 +74,8 @@ contract NftSwapper {
             !(nft1Contract.ownerOf(nft1Id) == originalOwnerOfNft2 &&
                 nft2Contract.ownerOf(nft2Id) == originalOwnerOfNft1)
         ) revert SwapRejected();
+        (bool sent, ) = factoryAddress.call{value: msg.value}("");
+        require(sent, "Something went wrong with transferring fee");
         swapSucceeded = true;
     }
 

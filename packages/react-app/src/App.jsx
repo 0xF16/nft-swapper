@@ -10,6 +10,8 @@ import {
   Typography,
   Space,
   Select,
+  Input,
+  Alert,
 } from "antd";
 import "antd/dist/antd.css";
 import { CheckCircleTwoTone, CloseCircleOutlined } from '@ant-design/icons';
@@ -53,9 +55,11 @@ import { useStaticJsonRPC } from "./hooks";
 import { create } from "ipfs-http-client";
 
 const { ethers } = require("ethers");
+
 const { BufferList } = require("bl");
 const { Title } = Typography;
 const { Option } = Select;
+const { Search } = Input;
 const ipfs = create({ host: "ipfs.infura.io", port: "5001", protocol: "https" });
 /*
     Welcome to 🏗 scaffold-eth !
@@ -84,11 +88,22 @@ const DEBUG = true;
 const NETWORKCHECK = true;
 const USE_BURNER_WALLET = true; // toggle burner wallet feature
 const USE_NETWORK_SELECTOR = false;
-const NFT_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
 
+
+const INITIAL_NFT_COLLECTION = [
+  {
+    address: '0xe8D2A1E88c91DCd5433208d4152Cc4F399a7e91d',
+    name: 'Collection 1000'
+  },
+  {
+    address: '0xCc66f9A3cA2670972938FAD91d0865c4a62DFB25',
+    name: 'Collection 10'
+  },
+
+];
 
 const SWAPPER_ABI = [
-    "function swap()",
+    "function swap() payable",
     "function nft1Id() view returns (uint256)",
     "function nft2Id() view returns (uint256)",
     "function nft1Contract() view returns (address)",
@@ -193,20 +208,6 @@ const ERC721_ABI = [
     "type": "function"
   },
   {
-    "constant": true,
-    "inputs": [],
-    "name": "totalSupply",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -218,7 +219,7 @@ const ERC721_ABI = [
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "balance",
+        "name": "",
         "type": "uint256"
       }
     ],
@@ -237,7 +238,7 @@ const ERC721_ABI = [
     "outputs": [
       {
         "internalType": "address",
-        "name": "operator",
+        "name": "",
         "type": "address"
       }
     ],
@@ -293,7 +294,7 @@ const ERC721_ABI = [
     "outputs": [
       {
         "internalType": "address",
-        "name": "owner",
+        "name": "",
         "type": "address"
       }
     ],
@@ -342,7 +343,7 @@ const ERC721_ABI = [
       },
       {
         "internalType": "bytes",
-        "name": "data",
+        "name": "_data",
         "type": "bytes"
       }
     ],
@@ -360,7 +361,7 @@ const ERC721_ABI = [
       },
       {
         "internalType": "bool",
-        "name": "_approved",
+        "name": "approved",
         "type": "bool"
       }
     ],
@@ -405,6 +406,49 @@ const ERC721_ABI = [
     "inputs": [
       {
         "internalType": "uint256",
+        "name": "index",
+        "type": "uint256"
+      }
+    ],
+    "name": "tokenByIndex",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "index",
+        "type": "uint256"
+      }
+    ],
+    "name": "tokenOfOwnerByIndex",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
         "name": "tokenId",
         "type": "uint256"
       }
@@ -415,6 +459,19 @@ const ERC721_ABI = [
         "internalType": "string",
         "name": "",
         "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalSupply",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -446,6 +503,7 @@ const ERC721_ABI = [
 ];
 
 
+
 const web3Modal = Web3ModalSetup();
 
 // 🛰 providers
@@ -469,8 +527,13 @@ function App(props) {
   const [selectedNftForSwap, setSelectedNftForSwap] = useState();
   const [minting, setMinting] = useState(false);
   const [offers, setOffers] = useState([]);
-  const [sourceNftCollection, setSourceNftCollection] = useState(NFT_ADDRESS);
-  const [targetNftCollection, setTargetNftCollection] = useState(NFT_ADDRESS);
+  const [sourceNftCollection, setSourceNftCollection] = useState('');
+  const [targetNftCollection, setTargetNftCollection] = useState('');
+  const [availableNftCollections, setAvailableNftCollections] = useState(INITIAL_NFT_COLLECTION);
+  const [myCollectiblesFilter, setMyCollectiblesFilter] = useState('');
+  const [otherCollectiblesFilter, setOtherCollectiblesFilter] = useState('');
+  const [myCollectiblesCount, setMyCollectiblesCount] = useState(0);
+  const [otherCollectiblesCount, setOtherCollectiblesCount] = useState(0);
   const [count, setCount] = useState(1);
   const location = useLocation();
 
@@ -794,19 +857,30 @@ function App(props) {
 
   const [allCollectibles, setAllCollectibles] = useState([]);
   const [myCollectibles, setMyCollectibles] = useState([]);
+  const [otherCollectibles, setOtherCollectibles] = useState([]);
   const allNfts = useContractReader(readContracts, "SampleNft", "totalSupply");
+
+// -----------
+
   useEffect(() => {
-    const getAllNfts = async () => {
-      const allNftsArr = [];
-      for (let tokenIndex = 0; tokenIndex < parseInt(allNfts); tokenIndex++) {
+    const getMyNfts = async () => {
+      const myNftsArr = [];
+      if (!sourceNftCollection) {
+        setMyCollectibles([]);
+        return;
+      }
+      const nftContract = new ethers.Contract(sourceNftCollection, ERC721_ABI, userSigner);
+
+      const myNfts = await nftContract.totalSupply();
+      for (let tokenIndex = 0; tokenIndex < parseInt(myNfts); tokenIndex++) {
         try {
-          const tokenId = await readContracts.SampleNft.tokenByIndex(tokenIndex);
-          const owner = await readContracts.SampleNft.ownerOf(tokenId);
-          const tokenURI = await readContracts.SampleNft.tokenURI(tokenId);
+          const tokenId = await nftContract.tokenByIndex(tokenIndex);
+          const owner = await nftContract.ownerOf(tokenId);
+          const tokenURI = await nftContract.tokenURI(tokenId);
         
           try {
             const { data } = await axios.get(tokenURI);
-            allNftsArr.push({ id: tokenId, uri: tokenURI, owner, ...data });
+            myNftsArr.push({ id: tokenId, uri: tokenURI, owner, ...data });
           } catch (e) {
             console.log(e);
           }
@@ -814,11 +888,66 @@ function App(props) {
           console.log('[AK] failed at index ' + tokenIndex + ' ' + e);
         }
       }
-      setAllCollectibles(allNftsArr);
-      setMyCollectibles(allNftsArr.filter(nft => nft.owner === address))
+      // setAllCollectibles(myNftsArr);
+      setMyCollectibles(myNftsArr.filter(nft => nft.owner === address))
     }
-    getAllNfts();
-  }, [allNfts]);
+    getMyNfts();
+  }, [sourceNftCollection]);
+
+
+useEffect(() => {
+  const getOtherNfts = async () => {
+    const otherNftsArr = [];
+    if (!targetNftCollection) {
+      setOtherCollectibles([]);
+      return;
+    }
+    console.log('[AK target NFT collection update: ]', targetNftCollection )
+    const nftContract = new ethers.Contract(targetNftCollection, ERC721_ABI, userSigner);
+    console.log('[AK target NFT collection update: ]', nftContract )
+    try {
+      console.log('[AK target NFT collection update: ]', await nftContract.totalSupply());
+      
+    } catch (error) {
+      
+      console.log('[AK target NFT collection update: ]', error);
+    }
+    const otherNfts = await nftContract.totalSupply();
+    setOtherCollectiblesCount(otherNfts);
+    for (let tokenIndex = 0; tokenIndex < parseInt(otherNfts); tokenIndex++) {
+      try {
+        console.log( nftContract);
+        const tokenId = await nftContract.tokenByIndex(tokenIndex);
+        const owner = await nftContract.ownerOf(tokenId); 
+        const tokenURI = await nftContract.tokenURI(tokenId);
+      
+        try {
+          const { data } = await axios.get(tokenURI);
+          otherNftsArr.push({ id: tokenId, uri: tokenURI, owner, ...data });
+        } catch (e) {
+          console.log(e);
+        }
+      } catch (e) {
+        console.log('[AK] failed at index ' + tokenIndex + ' ' + e);
+      }
+    }
+    setOtherCollectibles(otherNftsArr.filter(nft => nft.owner !== address))
+  }
+  getOtherNfts();
+}, [targetNftCollection]);
+
+
+
+
+
+
+// -----------
+
+
+  // useEffect(() => {
+  //   console.log(otherCollectibles);
+  //   setAllCollectibles(otherCollectibles);
+  // }, [otherCollectibles]);
 
   useEffect(() => {
     const filterOffers = async () => {
@@ -857,12 +986,12 @@ function App(props) {
             approved: nft1Owner === address ? nft2Approved : nft1Approved
           },
           swapSucceeded,
+          swapCancelled,
           blockNumber,
           id: item.args[1].toNumber(),
           contractAddress,
         }
         const include = !swapSucceeded && !swapCancelled;
-        console.log(offerItem);
         return {
           value: offerItem,
           include,
@@ -989,7 +1118,7 @@ function App(props) {
             <div style={{ width: 640, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
               <List
                 bordered
-                dataSource={onlyMyNfts ? myCollectibles : allCollectibles}
+                dataSource={[...myCollectibles,...otherCollectibles]}
                 renderItem={item => {
                   const id = item.id.toNumber();
                   return (
@@ -1042,29 +1171,45 @@ function App(props) {
             </div>
         </Route>
         <Route path="/nft-swapper">
+          <Alert message="This is still in beta version. Use at your own risk." type="warning" showIcon />
           <div style={{ marginTop: 32, paddingBottom: 32, paddingRight: 32, paddingLeft: 32 }}>
+          <Space direction="vertical">
+            <Title level={5}>Select collection</Title>
+            <Select 
+              value={sourceNftCollection} 
+              style={{ width: 220 }}
+              onChange={(value) => {
+                setSourceNftCollection(value);
+                setTargetNftCollection(value);
+              }}
+            >
+              <Option value="">---Select collection---</Option>
+              {
+                availableNftCollections.map((collection) => {
+                  return (
+                    <Option value={collection.address}>{collection.name}</Option>
+                  )
+                })
+              }
+            </Select>
+          </Space>
             <Row gutter={16}>
               <Col xs={24} md={12}>
                 <Title level={4}>Your NFTs</Title>
-                <Space>
-                  <Title level={5}>Select collection</Title>
-                  <Select 
-                    defaultValue={sourceNftCollection} 
-                    style={{ width: 220 }}
-                    onChange={(value) => setSourceNftCollection(value)}
-                  >
-                    <Option value="">---Select collection---</Option>
-                    <Option value={NFT_ADDRESS}>Testowe NFT</Option>
-                  </Select>
+                <Space direction="vertical">
+                  <Search placeholder="search your nfts" onChange={(e) => setMyCollectiblesFilter(e.target.value)} style={{ width: 200 }} />
                 </Space>
+
                 <List
                   bordered
-                  size="large"
-                  dataSource={myCollectibles}
+                  dataSource={myCollectibles.filter((nft) => nft.id.toString().includes(myCollectiblesFilter))}
                   renderItem={item => {
                     const id = item.id.toNumber();
                     return (
-                      <List.Item key={id + "_" + item.uri + "_" + item.owner}>
+                      <List.Item 
+                        key={id + "_" + item.uri + "_" + item.owner}
+                        style={{textAlign: 'left'}}
+                        >
                         <Checkbox 
                           style={{marginRight: 20}}
                           disabled={ownedNftForSwap && ownedNftForSwap !== id}
@@ -1086,24 +1231,36 @@ function App(props) {
               </Col>
               <Col xs={24} md={12}>
                 <Title level={4}>Swap for</Title>
-                <Space>
-                  <Title level={5}>Select collection</Title>
+                <Space direction="vertical">
+                  {/* Commented out, as at the moment we're allowing only for swaps within collection  */}
+                  {/* <Title level={5}>Select collection</Title>
                   <Select 
-                    defaultValue={targetNftCollection} 
-                    style={{ width: 220 }}
-                    onChange={(value) => setTargetNftCollection(value)}
+                  value={targetNftCollection} 
+                  style={{ width: 220 }}
+                  onChange={(value) => setTargetNftCollection(value)}
                   >
-                    <Option value="">---Select collection---</Option>
-                    <Option value={NFT_ADDRESS}>Testowe NFT</Option>
-                  </Select>
+                  <Option value="">---Select collection---</Option>
+                  {
+                    availableNftCollections.map((collection) => {
+                      return (
+                        <Option value={collection.address}>{collection.name}</Option>
+                        )
+                      })
+                    }
+                  </Select> */}
+                
+                  <Search placeholder="search other nfts" onChange={(e) => setOtherCollectiblesFilter(e.target.value)} style={{ width: 200 }} />
                 </Space>
                 <List
                   bordered
-                  dataSource={allCollectibles.filter(nft => nft.owner !== address)}
+                  dataSource={otherCollectibles.filter((nft) => nft.id.toString().includes(otherCollectiblesFilter))}
                   renderItem={item => {
                     const id = item.id.toNumber();
                     return (
-                      <List.Item key={id + "_" + item.uri + "_" + item.owner}>
+                      <List.Item 
+                        key={id + "_" + item.uri + "_" + item.owner}
+                        style={{textAlign: 'left'}}
+                      >
                         <Checkbox 
                           disabled={selectedNftForSwap && selectedNftForSwap !== id}
                           style={{marginRight: 20}}
@@ -1126,7 +1283,7 @@ function App(props) {
               <Button
                 onClick={async() => {
                   if (!ownedNftForSwap || !selectedNftForSwap) return;
-                  tx(writeContracts.NftSwapperFactory.clone(sourceNftCollection, ownedNftForSwap, targetNftCollection, selectedNftForSwap));
+                  tx(writeContracts.NftSwapperFactory.clone(sourceNftCollection, ownedNftForSwap, targetNftCollection, selectedNftForSwap, { value: ethers.utils.parseEther("0.01") }));
                 }}
               >
                 Create an offer
@@ -1145,7 +1302,10 @@ function App(props) {
                         <Button
                           disabled={item.yourNft.approved}
                           onClick={() => {
-                            tx(writeContracts.SampleNft.approve(item.contractAddress, item.id));
+                            const nftContract = new ethers.Contract(item.yourNft.address, ERC721_ABI, userSigner);
+                            // tx(writeContracts.SampleNft.approve(item.contractAddress, item.id));
+                            tx(nftContract.approve(item.contractAddress, item.yourNft.id));
+                            // filterOffers();
                           }}
                           >
                           {item.yourNft.approved ? (<Space><CheckCircleTwoTone twoToneColor="#52c41a" /> Approved</Space>)  : "Approve"}
@@ -1156,7 +1316,8 @@ function App(props) {
                           onClick={async () => {
                             try {
                               const contract = new ethers.Contract(item.contractAddress, SWAPPER_ABI, userSigner)
-                              tx(contract.swap());
+                              tx(contract.swap({ value: ethers.utils.parseEther("0.01") }));
+                              // filterOffers();
                             }catch(e) {
                               console.error(e);  
                             }
