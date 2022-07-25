@@ -5,16 +5,13 @@ import {
   Row, 
   List, 
   Card, 
-  Avatar, 
-  Checkbox, 
   Typography,
-  Space,
   Select,
   Input,
-  Alert,
+
 } from "antd";
 import "antd/dist/antd.css";
-import { CheckCircleTwoTone, CloseCircleOutlined } from '@ant-design/icons';
+
 
 import {
   useBalance,
@@ -45,8 +42,7 @@ import {
 } from "./components";
 import { NETWORKS, ALCHEMY_KEY } from "./constants";
 import externalContracts from "./contracts/external_contracts";
-import axios from "axios";
-import { useEventListener } from "eth-hooks/events/useEventListener";
+
 // contracts
 import deployedContracts from "./contracts/hardhat_contracts.json";
 import { Transactor, Web3ModalSetup } from "./helpers";
@@ -56,10 +52,6 @@ import { create } from "ipfs-http-client";
 
 const { ethers } = require("ethers");
 
-const { BufferList } = require("bl");
-const { Title } = Typography;
-const { Option } = Select;
-const { Search } = Input;
 const ipfs = create({ host: "ipfs.infura.io", port: "5001", protocol: "https" });
 /*
     Welcome to 🏗 scaffold-eth !
@@ -90,418 +82,6 @@ const USE_BURNER_WALLET = true; // toggle burner wallet feature
 const USE_NETWORK_SELECTOR = false;
 
 
-const INITIAL_NFT_COLLECTION = [
-  {
-    address: '0xe8D2A1E88c91DCd5433208d4152Cc4F399a7e91d',
-    name: 'Collection 1000'
-  },
-  {
-    address: '0xCc66f9A3cA2670972938FAD91d0865c4a62DFB25',
-    name: 'Collection 10'
-  },
-
-];
-
-const SWAPPER_ABI = [
-    "function swap() payable",
-    "function nft1Id() view returns (uint256)",
-    "function nft2Id() view returns (uint256)",
-    "function nft1Contract() view returns (address)",
-    "function nft2Contract() view returns (address)",
-    "function swapSucceeded() view returns (bool)",
-    "function swapCancelled() view returns (bool)",
-    "function cancelSwap()"
-];
-
-const ERC721_ABI = [
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "approved",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "Approval",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "operator",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "approved",
-        "type": "bool"
-      }
-    ],
-    "name": "ApprovalForAll",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "from",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "Transfer",
-    "type": "event"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "approve",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      }
-    ],
-    "name": "balanceOf",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getApproved",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "operator",
-        "type": "address"
-      }
-    ],
-    "name": "isApprovedForAll",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "name",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "ownerOf",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "from",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "safeTransferFrom",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "from",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes",
-        "name": "_data",
-        "type": "bytes"
-      }
-    ],
-    "name": "safeTransferFrom",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "operator",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "approved",
-        "type": "bool"
-      }
-    ],
-    "name": "setApprovalForAll",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes4",
-        "name": "interfaceId",
-        "type": "bytes4"
-      }
-    ],
-    "name": "supportsInterface",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "symbol",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "index",
-        "type": "uint256"
-      }
-    ],
-    "name": "tokenByIndex",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "index",
-        "type": "uint256"
-      }
-    ],
-    "name": "tokenOfOwnerByIndex",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "tokenURI",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "totalSupply",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "from",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "transferFrom",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
-];
-
 
 
 const web3Modal = Web3ModalSetup();
@@ -522,18 +102,9 @@ function App(props) {
   const [address, setAddress] = useState();
   const [selectedNetwork, setSelectedNetwork] = useState(networkOptions[0]);
   const [transferToAddresses, setTransferToAddresses] = useState({});
-  const [onlyMyNfts, setOnlyMyNfts] = useState(false);
-  const [ownedNftForSwap, setOwnedNftForSwap] = useState();
-  const [selectedNftForSwap, setSelectedNftForSwap] = useState();
+
   const [minting, setMinting] = useState(false);
-  const [offers, setOffers] = useState([]);
-  const [sourceNftCollection, setSourceNftCollection] = useState('');
-  const [targetNftCollection, setTargetNftCollection] = useState('');
-  const [availableNftCollections, setAvailableNftCollections] = useState(INITIAL_NFT_COLLECTION);
-  const [myCollectiblesFilter, setMyCollectiblesFilter] = useState('');
-  const [otherCollectiblesFilter, setOtherCollectiblesFilter] = useState('');
-  const [myCollectiblesCount, setMyCollectiblesCount] = useState(0);
-  const [otherCollectiblesCount, setOtherCollectiblesCount] = useState(0);
+
   const [count, setCount] = useState(1);
   const location = useLocation();
 
@@ -608,158 +179,8 @@ function App(props) {
   // If you want to make 🔐 write transactions to your contracts, use the userSigner:
   const writeContracts = useContractLoader(userSigner, contractConfig, localChainId);
 
-  const offerEvents = useEventListener(readContracts, "NftSwapperFactory", "OfferCreated", localProvider, 1);
 
-  const json = {
-    1: {
-      description: "It's actually a bison?",
-      external_url: "https://austingriffith.com/portfolio/paintings/", // <-- this can link to a page for the specific file too
-      image: "https://austingriffith.com/images/paintings/buffalo.jpg",
-      name: "Buffalo",
-      attributes: [
-        {
-          trait_type: "BackgroundColor",
-          value: "green",
-        },
-        {
-          trait_type: "Eyes",
-          value: "googly",
-        },
-        {
-          trait_type: "Stamina",
-          value: 42,
-        },
-      ],
-    },
-    2: {
-      description: "What is it so worried about?",
-      external_url: "https://austingriffith.com/portfolio/paintings/", // <-- this can link to a page for the specific file too
-      image: "https://austingriffith.com/images/paintings/zebra.jpg",
-      name: "Zebra",
-      attributes: [
-        {
-          trait_type: "BackgroundColor",
-          value: "blue",
-        },
-        {
-          trait_type: "Eyes",
-          value: "googly",
-        },
-        {
-          trait_type: "Stamina",
-          value: 38,
-        },
-      ],
-    },
-    3: {
-      description: "What a horn!",
-      external_url: "https://austingriffith.com/portfolio/paintings/", // <-- this can link to a page for the specific file too
-      image: "https://austingriffith.com/images/paintings/rhino.jpg",
-      name: "Rhino",
-      attributes: [
-        {
-          trait_type: "BackgroundColor",
-          value: "pink",
-        },
-        {
-          trait_type: "Eyes",
-          value: "googly",
-        },
-        {
-          trait_type: "Stamina",
-          value: 22,
-        },
-      ],
-    },
-    4: {
-      description: "Is that an underbyte?",
-      external_url: "https://austingriffith.com/portfolio/paintings/", // <-- this can link to a page for the specific file too
-      image: "https://austingriffith.com/images/paintings/fish.jpg",
-      name: "Fish",
-      attributes: [
-        {
-          trait_type: "BackgroundColor",
-          value: "blue",
-        },
-        {
-          trait_type: "Eyes",
-          value: "googly",
-        },
-        {
-          trait_type: "Stamina",
-          value: 15,
-        },
-      ],
-    },
-    5: {
-      description: "So delicate.",
-      external_url: "https://austingriffith.com/portfolio/paintings/", // <-- this can link to a page for the specific file too
-      image: "https://austingriffith.com/images/paintings/flamingo.jpg",
-      name: "Flamingo",
-      attributes: [
-        {
-          trait_type: "BackgroundColor",
-          value: "black",
-        },
-        {
-          trait_type: "Eyes",
-          value: "googly",
-        },
-        {
-          trait_type: "Stamina",
-          value: 6,
-        },
-      ],
-    },
-    6: {
-      description: "Raaaar!",
-      external_url: "https://austingriffith.com/portfolio/paintings/", // <-- this can link to a page for the specific file too
-      image: "https://austingriffith.com/images/paintings/godzilla.jpg",
-      name: "Godzilla",
-      attributes: [
-        {
-          trait_type: "BackgroundColor",
-          value: "orange",
-        },
-        {
-          trait_type: "Eyes",
-          value: "googly",
-        },
-        {
-          trait_type: "Stamina",
-          value: 99,
-        },
-      ],
-    },
-  };
-
-  const mintItem = async () => {
-    // upload to ipfs
-    const uploaded = await ipfs.add(JSON.stringify(json[count]));
-    setCount(count + 1);
-    console.log("Uploaded Hash: ", uploaded);
-    const result = tx(
-      writeContracts &&
-        writeContracts.SampleNft &&
-        writeContracts.SampleNft.mintItem(address, uploaded.path),
-      update => {
-        console.log("📡 Transaction Update:", update);
-        if (update && (update.status === "confirmed" || update.status === 1)) {
-          console.log(" 🍾 Transaction " + update.hash + " finished!");
-          console.log(
-            " ⛽️ " +
-              update.gasUsed +
-              "/" +
-              (update.gasLimit || update.gas) +
-              " @ " +
-              parseFloat(update.gasPrice) / 1000000000 +
-              " gwei",
-          );
-        }
-      },
-    );
-  };
-
+  
 
   // EXTERNAL CONTRACT EXAMPLE:
   //
@@ -783,7 +204,8 @@ function App(props) {
   const addressFromENS = useResolveName(mainnetProvider, "austingriffith.eth");
   console.log("🏷 Resolved austingriffith.eth as:",addressFromENS)
   */
-
+//  const test = useContractReader(readContracts, "TRANSPARENT_POWER", "totalSupply");
+//  console.log('[AK] total ', test);
   //
   // 🧫 DEBUG 👨🏻‍🔬
   //
@@ -855,152 +277,7 @@ function App(props) {
 
   const faucetAvailable = localProvider && localProvider.connection && targetNetwork.name.indexOf("local") !== -1;
 
-  const [allCollectibles, setAllCollectibles] = useState([]);
-  const [myCollectibles, setMyCollectibles] = useState([]);
-  const [otherCollectibles, setOtherCollectibles] = useState([]);
-  const allNfts = useContractReader(readContracts, "SampleNft", "totalSupply");
 
-// -----------
-
-  useEffect(() => {
-    const getMyNfts = async () => {
-      const myNftsArr = [];
-      if (!sourceNftCollection) {
-        setMyCollectibles([]);
-        return;
-      }
-      const nftContract = new ethers.Contract(sourceNftCollection, ERC721_ABI, userSigner);
-
-      const myNfts = await nftContract.totalSupply();
-      for (let tokenIndex = 0; tokenIndex < parseInt(myNfts); tokenIndex++) {
-        try {
-          const tokenId = await nftContract.tokenByIndex(tokenIndex);
-          const owner = await nftContract.ownerOf(tokenId);
-          const tokenURI = await nftContract.tokenURI(tokenId);
-        
-          try {
-            const { data } = await axios.get(tokenURI);
-            myNftsArr.push({ id: tokenId, uri: tokenURI, owner, ...data });
-          } catch (e) {
-            console.log(e);
-          }
-        } catch (e) {
-          console.log('[AK] failed at index ' + tokenIndex + ' ' + e);
-        }
-      }
-      // setAllCollectibles(myNftsArr);
-      setMyCollectibles(myNftsArr.filter(nft => nft.owner === address))
-    }
-    getMyNfts();
-  }, [sourceNftCollection]);
-
-
-useEffect(() => {
-  const getOtherNfts = async () => {
-    const otherNftsArr = [];
-    if (!targetNftCollection) {
-      setOtherCollectibles([]);
-      return;
-    }
-    console.log('[AK target NFT collection update: ]', targetNftCollection )
-    const nftContract = new ethers.Contract(targetNftCollection, ERC721_ABI, userSigner);
-    console.log('[AK target NFT collection update: ]', nftContract )
-    try {
-      console.log('[AK target NFT collection update: ]', await nftContract.totalSupply());
-      
-    } catch (error) {
-      
-      console.log('[AK target NFT collection update: ]', error);
-    }
-    const otherNfts = await nftContract.totalSupply();
-    setOtherCollectiblesCount(otherNfts);
-    for (let tokenIndex = 0; tokenIndex < parseInt(otherNfts); tokenIndex++) {
-      try {
-        console.log( nftContract);
-        const tokenId = await nftContract.tokenByIndex(tokenIndex);
-        const owner = await nftContract.ownerOf(tokenId); 
-        const tokenURI = await nftContract.tokenURI(tokenId);
-      
-        try {
-          const { data } = await axios.get(tokenURI);
-          otherNftsArr.push({ id: tokenId, uri: tokenURI, owner, ...data });
-        } catch (e) {
-          console.log(e);
-        }
-      } catch (e) {
-        console.log('[AK] failed at index ' + tokenIndex + ' ' + e);
-      }
-    }
-    setOtherCollectibles(otherNftsArr.filter(nft => nft.owner !== address))
-  }
-  getOtherNfts();
-}, [targetNftCollection]);
-
-
-
-
-
-
-// -----------
-
-
-  // useEffect(() => {
-  //   console.log(otherCollectibles);
-  //   setAllCollectibles(otherCollectibles);
-  // }, [otherCollectibles]);
-
-  useEffect(() => {
-    const filterOffers = async () => {
-      const myOffers =  offerEvents.filter((item) => {
-        const myCollectiblesIds = myCollectibles.map((nft) => nft.id.toNumber());
-        return myCollectiblesIds.indexOf(item.args[1].toNumber()) !== -1;
-      });
-      const filteredOffers =  await (Promise.all(myOffers.map(async (item) => {
-        const contractAddress = item.args[2];
-        const swapperContract = new ethers.Contract(contractAddress, SWAPPER_ABI, userSigner);
-        const swapSucceeded = await swapperContract.swapSucceeded();
-        const swapCancelled = await swapperContract.swapCancelled();
-        const nft1Address = await swapperContract.nft1Contract();
-        const nft2Address = await swapperContract.nft2Contract();
-        const nft1Id = await swapperContract.nft1Id();
-        const nft2Id = await swapperContract.nft2Id();
-        const { blockNumber } = item;
-        const nft1Contract  = new ethers.Contract(nft1Address, ERC721_ABI, userSigner);
-        const nft2Contract  = new ethers.Contract(nft2Address, ERC721_ABI, userSigner);
-        const nft1Approved = await nft1Contract.getApproved(nft1Id) == contractAddress;
-        const nft1Owner = await nft1Contract.ownerOf(nft1Id);
-        const nft2Approved = await nft2Contract.getApproved(nft2Id) == contractAddress;
-        const nft2Owner = await nft2Contract.ownerOf(nft2Id);
-
-        let offerItem = {
-          yourNft: {
-            address: nft1Owner === address ? nft1Address : nft2Address,
-            id: nft1Owner === address ? nft1Id : nft2Id,
-            owner: nft1Owner,
-            approved: nft1Owner === address ? nft1Approved : nft2Approved,
-          },
-          otherNft: {
-            address: nft1Owner === address ? nft2Address : nft1Address,
-            id: nft1Owner === address ? nft2Id : nft1Id,
-            owner: nft2Owner,
-            approved: nft1Owner === address ? nft2Approved : nft1Approved
-          },
-          swapSucceeded,
-          swapCancelled,
-          blockNumber,
-          id: item.args[1].toNumber(),
-          contractAddress,
-        }
-        const include = !swapSucceeded && !swapCancelled;
-        return {
-          value: offerItem,
-          include,
-        } 
-      })))
-      setOffers(filteredOffers.filter(v => v.include).map(data => data.value));
-    }
-    filterOffers();
-  }, [offerEvents, myCollectibles])
 
   return (
     <div className="App">
@@ -1008,7 +285,7 @@ useEffect(() => {
       <Header>
         {/* 👨‍💼 Your account is in the top right with a wallet at connect options */}
         <div style={{ position: "relative", display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", flex: 1 }}>
+          <div style={{ display: "flex", flex: 1, flexDirection: "row" }}>
             {USE_NETWORK_SELECTOR && (
               <div style={{ marginRight: 20 }}>
                 <NetworkSwitch
@@ -1054,11 +331,8 @@ useEffect(() => {
         <Menu.Item key="/nfts">
           <Link to="/nfts">NFT collection</Link>
         </Menu.Item>
-        <Menu.Item key="/nft-swapper">
-          <Link to="/nft-swapper">NFT Swapper</Link>
-        </Menu.Item>
         <Menu.Item key="/nft">
-          <Link to="/nft">Sample NFT Contract</Link>
+          <Link to="/nft">Transparent Powers Contract</Link>
         </Menu.Item>
         <Menu.Item key="/swapperfactory">
           <Link to="/swapperfactory">NFT Swapper Factory Contract</Link>
@@ -1077,7 +351,16 @@ useEffect(() => {
       <Switch>
         <Route exact path="/">
           {/* pass in any web3 props to this Home component. For example, yourLocalBalance */}
-          <Home yourLocalBalance={yourLocalBalance} readContracts={readContracts} />
+          <Home 
+            yourLocalBalance={yourLocalBalance} 
+            readContracts={readContracts}
+            address={address}
+            userSigner={userSigner}
+            tx={tx}
+            localProvider={localProvider}
+            writeContracts={writeContracts}
+
+          />
         </Route>
         <Route path="/ui">
           {/* <ExampleUI
@@ -1093,267 +376,65 @@ useEffect(() => {
             purpose={purpose}
           /> */}
         </Route>
-        <Route path="/nfts">
+        {/* <Route path="/nfts">
           <div style={{ width: 640, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
-              <Button
-                disabled={minting}
-                size="large"
-                onClick={() => {
-                  mintItem();
-                }}
-                
-              >
-                MINT NFT
-              </Button>
-              <Button
-                size="large"
-                type={onlyMyNfts ? "primary" : "default"}
-                onClick={() => {
-                  setOnlyMyNfts(!onlyMyNfts);
-                }}
-              >
-                Show only my NFTs
-              </Button>
-            </div>
-            <div style={{ width: 640, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
-              <List
-                bordered
-                dataSource={[...myCollectibles,...otherCollectibles]}
-                renderItem={item => {
-                  const id = item.id.toNumber();
-                  return (
-                    <List.Item key={id + "_" + item.uri + "_" + item.owner}>
-                      <Card
-                        title={
-                          <div>
-                            <span style={{ fontSize: 16, marginRight: 8 }}>#{id}</span> {item.name}
-                          </div>
-                        }
-                      >
+            <List
+              bordered
+              dataSource={[]}
+              renderItem={item => {
+                const id = item.id.toNumber();
+                return (
+                  <List.Item key={id + "_" + item.uri + "_" + item.owner}>
+                    <Card
+                      title={
                         <div>
-                          <img src={item.image} style={{ maxWidth: 150 }} />
+                          <span style={{ fontSize: 16, marginRight: 8 }}>#{id}</span> {item.name}
                         </div>
-                        <div>{item.description}</div>
-                      </Card>
-
+                      }
+                    >
                       <div>
-                        owner:{" "}
-                        <Address
-                          address={item.owner}
-                          ensProvider={mainnetProvider}
-                          blockExplorer={blockExplorer}
-                          fontSize={16}
-                        />
-                        <AddressInput
-                          ensProvider={mainnetProvider}
-                          placeholder="transfer to address"
-                          value={transferToAddresses[id]}
-                          onChange={newValue => {
-                            const update = {};
-                            update[id] = newValue;
-                            setTransferToAddresses({ ...transferToAddresses, ...update });
-                          }}
-                        />
-                        <Button
-                          onClick={() => {
-                            console.log("writeContracts", writeContracts);
-                            tx(writeContracts.SampleNft.transferFrom(address, transferToAddresses[id], id));
-                          }}
-                        >
-                          Transfer
-                        </Button>
-
+                        <img src={item.image} style={{ maxWidth: 150 }} />
                       </div>
-                    </List.Item>
-                  );
-                }}
-              />
-            </div>
-        </Route>
-        <Route path="/nft-swapper">
-          <Alert message="This is still in beta version. Use at your own risk." type="warning" showIcon />
-          <div style={{ marginTop: 32, paddingBottom: 32, paddingRight: 32, paddingLeft: 32 }}>
-          <Space direction="vertical">
-            <Title level={5}>Select collection</Title>
-            <Select 
-              value={sourceNftCollection} 
-              style={{ width: 220 }}
-              onChange={(value) => {
-                setSourceNftCollection(value);
-                setTargetNftCollection(value);
-              }}
-            >
-              <Option value="">---Select collection---</Option>
-              {
-                availableNftCollections.map((collection) => {
-                  return (
-                    <Option value={collection.address}>{collection.name}</Option>
-                  )
-                })
-              }
-            </Select>
-          </Space>
-            <Row gutter={16}>
-              <Col xs={24} md={12}>
-                <Title level={4}>Your NFTs</Title>
-                <Space direction="vertical">
-                  <Search placeholder="search your nfts" onChange={(e) => setMyCollectiblesFilter(e.target.value)} style={{ width: 200 }} />
-                </Space>
+                      <div>{item.description}</div>
+                    </Card>
 
-                <List
-                  bordered
-                  dataSource={myCollectibles.filter((nft) => nft.id.toString().includes(myCollectiblesFilter))}
-                  renderItem={item => {
-                    const id = item.id.toNumber();
-                    return (
-                      <List.Item 
-                        key={id + "_" + item.uri + "_" + item.owner}
-                        style={{textAlign: 'left'}}
-                        >
-                        <Checkbox 
-                          style={{marginRight: 20}}
-                          disabled={ownedNftForSwap && ownedNftForSwap !== id}
-                          onChange={(event) => {
-                            const { checked } = event.target;
-                            checked ? setOwnedNftForSwap(id) : setOwnedNftForSwap(null);
-                          }}
-                          >
-                        </Checkbox>
-                        <List.Item.Meta
-                          avatar={<Avatar shape="square" src={item.image} />}
-                          title={`# ${item.id.toNumber()}`}
-                          />
-                        
-                      </List.Item>
-                    )
-                  }}
-                  />
-              </Col>
-              <Col xs={24} md={12}>
-                <Title level={4}>Swap for</Title>
-                <Space direction="vertical">
-                  {/* Commented out, as at the moment we're allowing only for swaps within collection  */}
-                  {/* <Title level={5}>Select collection</Title>
-                  <Select 
-                  value={targetNftCollection} 
-                  style={{ width: 220 }}
-                  onChange={(value) => setTargetNftCollection(value)}
-                  >
-                  <Option value="">---Select collection---</Option>
-                  {
-                    availableNftCollections.map((collection) => {
-                      return (
-                        <Option value={collection.address}>{collection.name}</Option>
-                        )
-                      })
-                    }
-                  </Select> */}
-                
-                  <Search placeholder="search other nfts" onChange={(e) => setOtherCollectiblesFilter(e.target.value)} style={{ width: 200 }} />
-                </Space>
-                <List
-                  bordered
-                  dataSource={otherCollectibles.filter((nft) => nft.id.toString().includes(otherCollectiblesFilter))}
-                  renderItem={item => {
-                    const id = item.id.toNumber();
-                    return (
-                      <List.Item 
-                        key={id + "_" + item.uri + "_" + item.owner}
-                        style={{textAlign: 'left'}}
+                    <div>
+                      owner:{" "}
+                      <Address
+                        address={item.owner}
+                        ensProvider={mainnetProvider}
+                        blockExplorer={blockExplorer}
+                        fontSize={16}
+                      />
+                      <AddressInput
+                        ensProvider={mainnetProvider}
+                        placeholder="transfer to address"
+                        value={transferToAddresses[id]}
+                        onChange={newValue => {
+                          const update = {};
+                          update[id] = newValue;
+                          setTransferToAddresses({ ...transferToAddresses, ...update });
+                        }}
+                      />
+                      <Button
+                        onClick={() => {
+                          console.log("writeContracts", writeContracts);
+                          tx(writeContracts.SampleNft.transferFrom(address, transferToAddresses[id], id));
+                        }}
                       >
-                        <Checkbox 
-                          disabled={selectedNftForSwap && selectedNftForSwap !== id}
-                          style={{marginRight: 20}}
-                          onChange={(event) => {
-                            const { checked } = event.target;
-                            checked ? setSelectedNftForSwap(id) : setSelectedNftForSwap(null);
-                          }}
-                          >
-                        </Checkbox>
-                        <List.Item.Meta
-                          avatar={<Avatar shape="square" src={item.image} />}
-                          title={`# ${item.id.toNumber()}`}
-                        />
-                      </List.Item>
-                    )
-                  }}
-                />
-              </Col>
-            <div style={{width: 900, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
-              <Button
-                onClick={async() => {
-                  if (!ownedNftForSwap || !selectedNftForSwap) return;
-                  tx(writeContracts.NftSwapperFactory.clone(sourceNftCollection, ownedNftForSwap, targetNftCollection, selectedNftForSwap, { value: ethers.utils.parseEther("0.01") }));
-                }}
-              >
-                Create an offer
-              </Button>
-            </div>
-            </Row>
-                <Title level={3}>Offers</Title>
-                <List
-                  dataSource={offers}
-                  itemLayout="horizontal"
-                  renderItem={item => {
-                    return (
-                      <List.Item 
-                        key={item.blockNumber}
-                        actions={[
-                        <Button
-                          disabled={item.yourNft.approved}
-                          onClick={() => {
-                            const nftContract = new ethers.Contract(item.yourNft.address, ERC721_ABI, userSigner);
-                            // tx(writeContracts.SampleNft.approve(item.contractAddress, item.id));
-                            tx(nftContract.approve(item.contractAddress, item.yourNft.id));
-                            // filterOffers();
-                          }}
-                          >
-                          {item.yourNft.approved ? (<Space><CheckCircleTwoTone twoToneColor="#52c41a" /> Approved</Space>)  : "Approve"}
-                        </Button>, 
-                        <Button
-                          type="primary"
-                          disabled={!item.yourNft.approved || !item.otherNft.approved}
-                          onClick={async () => {
-                            try {
-                              const contract = new ethers.Contract(item.contractAddress, SWAPPER_ABI, userSigner)
-                              tx(contract.swap({ value: ethers.utils.parseEther("0.01") }));
-                              // filterOffers();
-                            }catch(e) {
-                              console.error(e);  
-                            }
-                          }}
-                        >
-                          Swap
-                        </Button>, 
-                        <Button
-                          type="danger"
-                          onClick={async () => {
-                            try {
-                              const contract = new ethers.Contract(item.contractAddress, SWAPPER_ABI, userSigner)
-                              tx(contract.cancelSwap());
-                            }catch(e) {
-                              console.error(e);  
-                            }
-                          }}
-                        >
-                          <Space><CloseCircleOutlined/> Reject</Space>
-                        </Button>
-                      ]}
-                      >
-                        <List.Item.Meta
-                          title={`Offer to exchange your NFT: ${item.yourNft.id} for NFT: ${item.otherNft.id}`}
-                          description={!item.otherNft.approved ? "Awaiting approval from your exchange partner" : "Your exchange partner has approved the transaction"}
-                        />
-                      </List.Item>
-                    );
-                  }}
-                />
-          
+                        Transfer
+                      </Button>
+
+                    </div>
+                  </List.Item>
+                );
+              }}
+            />
           </div>
-        </Route>
+            </Route> */}
         <Route path="/nft">
           <Contract
-            name="SampleNft"
+            name="NftContractTest"
             price={price}
             signer={userSigner}
             provider={localProvider}
@@ -1362,12 +443,9 @@ useEffect(() => {
             contractConfig={contractConfig}
           />
         </Route>
+        {/*
         <Route exact path="/swapperfactory">
-          {/*
-                🎛 this scaffolding is full of commonly used components
-                this <Contract/> component will automatically parse your ABI
-                and give you a form to interact with it locally
-            */}
+
           <Contract
             name="NftSwapperFactory"
             price={price}
@@ -1378,12 +456,8 @@ useEffect(() => {
             contractConfig={contractConfig}
           />
         </Route>
-        <Route exact path="/swapper">
-          {/*
-                🎛 this scaffolding is full of commonly used components
-                this <Contract/> component will automatically parse your ABI
-                and give you a form to interact with it locally
-            */}
+        <Route exact path="/swapper"> 
+
           <Contract
             name="NftSwapper"
             price={price}
@@ -1410,7 +484,7 @@ useEffect(() => {
             writeContracts={writeContracts}
             mainnetProvider={mainnetProvider}
           />
-        </Route>
+            </Route> */}
       </Switch>
 
       <ThemeSwitch />
