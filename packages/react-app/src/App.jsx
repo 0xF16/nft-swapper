@@ -1,15 +1,4 @@
-import { 
-  Button, 
-  Col, 
-  Menu, 
-  Row, 
-  List, 
-  Card, 
-  Typography,
-  Select,
-  Input,
-
-} from "antd";
+import { Button, Col, Menu, Row, Alert } from "antd";
 import "antd/dist/antd.css";
 
 
@@ -37,8 +26,7 @@ import {
   NetworkDisplay,
   FaucetHint,
   NetworkSwitch,
-  Address,
-  AddressInput,
+
 } from "./components";
 import { NETWORKS, ALCHEMY_KEY } from "./constants";
 import externalContracts from "./contracts/external_contracts";
@@ -46,7 +34,7 @@ import externalContracts from "./contracts/external_contracts";
 // contracts
 import deployedContracts from "./contracts/hardhat_contracts.json";
 import { Transactor, Web3ModalSetup } from "./helpers";
-import { Home, ExampleUI, Hints, Subgraph } from "./views";
+import { Home, HomeAlternate, ExampleUI, Hints, Subgraph } from "./views";
 import { useStaticJsonRPC } from "./hooks";
 import { create } from "ipfs-http-client";
 
@@ -321,9 +309,13 @@ function App(props) {
         logoutOfWeb3Modal={logoutOfWeb3Modal}
         USE_NETWORK_SELECTOR={USE_NETWORK_SELECTOR}
       />
+      <Alert message="This is still in beta version. Use at your own risk." type="warning" showIcon />
       <Menu style={{ textAlign: "center", marginTop: 20 }} selectedKeys={[location.pathname]} mode="horizontal">
         <Menu.Item key="/">
           <Link to="/">App Home</Link>
+        </Menu.Item>
+        <Menu.Item key="/alternate">
+          <Link to="/alternate">Alternative app Home</Link>
         </Menu.Item>
         {/* <Menu.Item key="/ui">
           <Link to="/ui">UI</Link>
@@ -352,6 +344,19 @@ function App(props) {
         <Route exact path="/">
           {/* pass in any web3 props to this Home component. For example, yourLocalBalance */}
           <Home 
+            yourLocalBalance={yourLocalBalance} 
+            readContracts={readContracts}
+            address={address}
+            userSigner={userSigner}
+            tx={tx}
+            localProvider={localProvider}
+            writeContracts={writeContracts}
+
+          />
+        </Route>
+        <Route exact path="/alternate">
+          {/* pass in any web3 props to this Home component. For example, yourLocalBalance */}
+          <HomeAlternate
             yourLocalBalance={yourLocalBalance} 
             readContracts={readContracts}
             address={address}

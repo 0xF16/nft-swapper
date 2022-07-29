@@ -52,6 +52,10 @@ contract NftSwapper {
         swapCancelled = true;
     }
 
+    function getSwapperStatus() public view returns(address, uint256, address, uint256, bool, bool){
+        return(address(nft1Contract), nft1Id, address(nft2Contract), nft2Id, swapSucceeded, swapCancelled);
+    }   
+
     function swap() public payable makerOrTaker {
         if (swapSucceeded == true) revert SwappedAlready();
         if (swapCancelled == true) revert SwapCancelled();

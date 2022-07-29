@@ -19,8 +19,6 @@ import {
 } from "eth-hooks";
 import { ethers } from "ethers";
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { useOnBlock } from "eth-hooks";
 import axios from "axios";
 import { CheckCircleTwoTone, CloseCircleOutlined } from '@ant-design/icons';
 import { useEventListener } from "eth-hooks/events/useEventListener";
@@ -28,19 +26,6 @@ const { Title } = Typography;
 const { Option, OptGroup } = Select;
 const { Search } = Input;
 
-
-
-// const INITIAL_NFT_COLLECTION = [
-//   {
-//     address: '0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6',
-//     name: 'Trans powers'
-//   },
-//   {
-//     address: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
-//     name: 'Collection 100'
-//   },
-
-// ];
 
 const ERC721_ABI = [
   {
@@ -467,13 +452,80 @@ function Home({ yourLocalBalance, readContracts, address, userSigner, tx, localP
   const [otherCollectibles, setOtherCollectibles] = useState([]);
   const [otherCollectiblesOptions, setOtherCollectiblesOptions] = useState([]);
   const [offerHistory, setOfferHistory] = useState([]);
-
-  const offerEvents = useEventListener(readContracts, "NftSwapperFactory", "OfferCreated", localProvider, 1);
+  const [nftTransferEvents, setNftTransferEvents] = useState([]);
+// const [offerEvents, setOfferEvents] = useState([]);
+  const offerEvents = useEventListener(readContracts, "NftSwapperFactory", "OfferCreated", localProvider, -1);
 
   const nftTotalSupply = useContractReader(readContracts, "TRANSPARENT_POWER", "totalSupply");
   
-  const nftTransferEvents = useEventListener(readContracts, "TRANSPARENT_POWER", "Transfer", localProvider, 1);
   const nftApprovalEvents = useEventListener(readContracts, "TRANSPARENT_POWER", "Approval", localProvider, 1);
+  // const nftTransferEvents = useEventListener(readContracts, "TRANSPARENT_POWER", readContracts.TRANSPARENT_POWER?.filters.Transfer(null, address), localProvider, 1);
+  // console.log('rrr', nftTransferEvents)
+  // useEffect(() => {
+  //   console.log('new attaching listenet')
+  //   let filter = readContracts.NftSwapperFactory?.filters.OfferCreated();
+  //   console.log('filter', filter);
+  //   filter = {...filter, fromBlock: 1000}
+  //   console.log('filter2', filter);
+  //   localProvider?.on('block', () => {
+  //     readContracts.NftSwapperFactory?.on(filter, handleEvents);
+  //     console.log('new block')
+  //   });
+    
+  //   const handleEvents = (from, to, id, evt) => {
+  //     console.log('offerEvents before', offerEvents)
+  //     setOfferEvents(offerEvents => setOfferEvents([...offerEvents, evt]));
+  //     console.log('offerEvents after', offerEvents)
+  //   };
+    
+  //   return () => readContracts.NftSwapperFactory?.off(filter, handleEvents);
+    
+
+  // }, [readContracts])
+
+  // useEffect(async () => {
+  //   const filter = readContracts.NftSwapperFactory?.filters.OfferCreated();
+  //   const offers = await readContracts.NftSwapperFactory?.queryFilter(filter, -1800, 'latest');
+  //   console.log('akaka', offers);
+  //   console.log('akaka2', await localProvider?.getBlockNumber());
+  //   // setOfferEvents(offers);
+  // }, [readContracts]);
+
+  const getEvents = async () => {
+    // console.log('[AK] refreshing events');
+    // const nftContract = readContracts.TRANSPARENT_POWER;
+    // const receivedFilter = readContracts.TRANSPARENT_POWER?.filters.Transfer(null, address);
+    // const sentFilter = readContracts.TRANSPARENT_POWER?.filters.Transfer(address, null);
+    // if (!sentFilter || !receivedFilter) return;
+    // console.log('[AK] filter', receivedFilter);
+    // const receivedEvents = await nftContract?.queryFilter(receivedFilter) || [];
+    // const sentEvents = await nftContract?.queryFilter(sentFilter) || [];
+    // console.log('[AK] received EVENTS', receivedEvents);
+    // console.log('[AK] sent EVENTS', sentEvents);
+    // setNftTransferEvents([...receivedEvents, ...sentEvents]);
+    // console.log("nftTransferEvents", nftTransferEvents);
+  }
+  
+  useEffect(() => {
+    let filterFromMe = readContracts.TRANSPARENT_POWER?.filters.Transfer(address, null);
+    let filterToMe = readContracts.TRANSPARENT_POWER?.filters.Transfer(null, address);
+
+    let handleEvent = function(from, to, id, evt) {
+      setNftTransferEvents(nftTransferEvents => [...nftTransferEvents, evt]);
+      console.log('[AK] id', id);
+    };
+    readContracts.TRANSPARENT_POWER?.on(filterFromMe, handleEvent);
+    readContracts.TRANSPARENT_POWER?.on(filterToMe, handleEvent);
+    return () => {
+      readContracts.TRANSPARENT_POWER?.off(filterFromMe, handleEvent);
+      readContracts.TRANSPARENT_POWER?.off(filterToMe, handleEvent);
+    }
+
+
+
+  }, [readContracts])
+  
+  
 
   const showResultMessage = (update) => {
     if (update && (update.status === "confirmed" || update.status === 1)) {
@@ -483,50 +535,37 @@ function Home({ yourLocalBalance, readContracts, address, userSigner, tx, localP
 
 
   const getMyNfts = async () => {
-    console.log('[AKgetMyNfts]calling getMyNfts', nftTransferEvents);
-    // const receiveFilter = nftContract.filters.Transfer(null, address);
-    // const sentFilter = nftContract.filters.Transfer(address, null);
-    const myEvents = nftTransferEvents.filter(event => event.args[1] == address || event.args[0] == address);
-    
-    const myFilteredEvents = {};
-    for (let i = 0; i < myEvents.length; i++) {
-      const { args } = myEvents[i];
-
+    console.log('[AK] refreshing events');
+    const nftContract = readContracts.TRANSPARENT_POWER;
+    const receivedFilter = readContracts.TRANSPARENT_POWER?.filters.Transfer(null, address);
+    const sentFilter = readContracts.TRANSPARENT_POWER?.filters.Transfer(address, null);
+    console.log('[AK] filter', receivedFilter);
+    const receivedEvents = await nftContract?.queryFilter(receivedFilter) || [];
+    const sentEvents = await nftContract?.queryFilter(sentFilter) || [];
+    console.log('[AK] received EVENTS', receivedEvents);
+    console.log('[AK] sent EVENTS', sentEvents);
+    // setNftTransferEvents([...receivedEvents, ...sentEvents]);
+    const nftTransferEventsTest = [...receivedEvents, ...sentEvents];
+    console.log("nftTransferEvents", nftTransferEvents);
+    const myFilteredEvents = nftTransferEventsTest.reduce((reduced, currentEvent) => {
+      const { args } = currentEvent;
       const fromAddr = args[0];
       const nftId = args[2].toNumber();
       const evtObj = {
         nftId: args[2],
         owned: fromAddr == address ? 0 : 1,
       };
-      if (myFilteredEvents.hasOwnProperty(nftId)) {
-        fromAddr == address ? myFilteredEvents[nftId].owned -= 1 : myFilteredEvents[nftId].owned += 1;
+      if (reduced.hasOwnProperty(nftId)) {
+        fromAddr == address ? reduced[nftId].owned -= 1 : reduced[nftId].owned += 1;
       } else {
-        myFilteredEvents[nftId] = evtObj;
+        reduced[nftId] = evtObj;
       }
-    }
-    console.log('[AKgetMyNfts]for loop ' , myFilteredEvents);
-
-    // const myFilteredEvents = myEvents.reduce((reduced, currentEvent) => {
-    //   const { args } = currentEvent;
-    //   const fromAddr = args[0];
-    //   const nftId = args[2].toNumber();
-    //   const evtObj = {
-    //     nftId: args[2],
-    //     owned: fromAddr == address ? 0 : 1,
-    //   };
-    //   if (reduced.hasOwnProperty(nftId)) {
-    //     fromAddr == address ? reduced[nftId].owned -= 1 : reduced[nftId].owned += 1;
-    //   } else {
-    //     reduced[nftId] = evtObj;
-    //   }
-    //   return reduced;
-    // }, {});
+      return reduced;
+    }, {});
     
     const myNftsArr = [];
-    console.log("[AKgetMyNfts] myFilteredEvents", myFilteredEvents)
     for (let nftId in myFilteredEvents)  {
       if (myFilteredEvents[nftId].owned == 1) {
-        console.log('[AKgetMyNfts] my owned nftid: ' + nftId + ' ', myFilteredEvents[nftId])
         try {
           const tokenId = myFilteredEvents[nftId].nftId;
           const tokenURI = fixUrl(await readContracts.TRANSPARENT_POWER.tokenURI(tokenId));
@@ -539,21 +578,36 @@ function Home({ yourLocalBalance, readContracts, address, userSigner, tx, localP
       }
     }
 
-    setMyCollectibles(myNftsArr);
-    console.log("[AKgetMyNfts] myNftsArr", myNftsArr);
     const ids = myNftsArr.map((nft) => nft.id.toNumber());
+    
+    const nftIndexArr = [];
+    const nftTotalSupply = await readContracts.TRANSPARENT_POWER?.totalSupply();
+    for (let i = 0; i < nftTotalSupply; i++) {
+      console.log('[AK3] My collectibles ID ', ids);
+      if (ids.indexOf(i+1) === -1) {
+        console.log('[AK3] Pushing ', i + 1);
+        nftIndexArr.push(<Option key={i} value={i+1}>{i+1}</Option>)
+      }
+    }
+    setMyCollectibles(myNftsArr);
     setMyCollectiblesIds(ids);
+    setOtherCollectiblesOptions(nftIndexArr);
+    console.log('[ak3] other collectibles options ', otherCollectiblesOptions);
   }
   
-  const getOtherNfts = async () => {
+  const getOtherNftsOptions = async () => {
     const nftIndexArr = [];
+    const nftTotalSupply = await readContracts.TRANSPARENT_POWER?.totalSupply();
     for (let i = 0; i < nftTotalSupply; i++) {
+      console.log('[AK3] My collectibles ID ', myCollectiblesIds);
       if (myCollectiblesIds.indexOf(i+1) === -1) {
+        console.log('[AK3] Pushing ', i + 1);
         nftIndexArr.push(<Option key={i} value={i+1}>{i+1}</Option>)
       }
     }
     setOtherCollectiblesOptions(nftIndexArr);
   }
+  
   
   const pullNftDetails = async () => {
     try {
@@ -577,37 +631,54 @@ function Home({ yourLocalBalance, readContracts, address, userSigner, tx, localP
     return (<Option disabled="true" key={id} value={id}>{id}</Option>)
   });
   
-
+  // const otherNftsOptions = () => {
+  //   const nftIndexArr = [];
+  //   for (let i = 0; i < nftTotalSupply; i++) {
+  //     console.log('[AK3] My collectibles ID ', myCollectiblesIds);
+  //     if (myCollectiblesIds.indexOf(i+1) === -1) {
+  //       console.log('[AK3] Pushing ', i + 1);
+  //       nftIndexArr.push(<Option key={i} value={i+1}>{i+1}</Option>)
+  //     }
+  //   }
+  //   return nftIndexArr;
+  // }
     
 
   const filterOffers = async () => {
+    console.log('offerEvents', offerEvents);
     const myOffersArr =  offerEvents.filter((item) => {
-
       return myCollectiblesIds.indexOf(item.args[1].toNumber()) !== -1;
     });
-
     setMyOffers(myOffersArr);
-    
-    
   }
 
   
   useEffect(() => {
-
     getMyNfts();
-
-
+    
   }, [nftTransferEvents]);
 
   useEffect(() => {
     pullNftDetails();
   }, [selectedNftId]);
 
-  useEffect(() => {
-
-    getOtherNfts();
+  // useEffect(() => {
+  //   console.log("[AK] nft total supply", nftTotalSupply);
+  //   setOtherCollectiblesOptions([]);
+  //   const getOtherNftsOptions = async () => {
+  //     const nftIndexArr = [];
+  //     for (let i = 0; i < nftTotalSupply; i++) {
+  //       console.log('[AK3] My collectibles ID ', myCollectiblesIds);
+  //       if (myCollectiblesIds.indexOf(i+1) === -1) {
+  //         console.log('[AK3] Pushing ', i + 1);
+  //         nftIndexArr.push(<Option key={i} value={i+1}>{i+1}</Option>)
+  //       }
+  //     }
+  //     setOtherCollectiblesOptions(nftIndexArr);
+  //   }
+  //   getOtherNftsOptions();
   
-  }, [nftTotalSupply, myCollectiblesIds]);
+  // }, [nftTotalSupply, myCollectiblesIds]);
 
   useEffect(() => {
     filterOffers();
@@ -619,6 +690,7 @@ function Home({ yourLocalBalance, readContracts, address, userSigner, tx, localP
         const contractAddress = item.args[2];
         const swapperContract = new ethers.Contract(contractAddress, SWAPPER_ABI, userSigner);
         const swapSucceeded = await swapperContract.swapSucceeded();
+        if (swapSucceeded == true) return {};
         const swapCancelled = await swapperContract.swapCancelled();
         const nft1Address = await swapperContract.nft1Contract();
         const nft2Address = await swapperContract.nft2Contract();
@@ -757,6 +829,7 @@ function Home({ yourLocalBalance, readContracts, address, userSigner, tx, localP
               >
                 <OptGroup label="Other NFts">
                   {otherCollectiblesOptions}
+                  {/* {otherNftsOptions} */}
                 </OptGroup>
                 <OptGroup label="Your NFTs">
                   {myNftsOptions}
@@ -799,10 +872,12 @@ function Home({ yourLocalBalance, readContracts, address, userSigner, tx, localP
           <Button
             onClick={async() => {
               if (!ownedNftForSwap || !selectedNftForSwap) return;
-              tx(writeContracts.NftSwapperFactory.clone(readContracts.TRANSPARENT_POWER.address, ownedNftForSwap, readContracts.TRANSPARENT_POWER.address, selectedNftForSwap, { value: ethers.utils.parseEther("0.01") }), showResultMessage);
-              setOwnedNftForSwap(null);
-              setSelectedNftForSwap(null);
-              setSelectedNftId(null);
+              tx(writeContracts.NftSwapperFactory.clone(readContracts.TRANSPARENT_POWER.address, ownedNftForSwap, readContracts.TRANSPARENT_POWER.address, selectedNftForSwap, { value: ethers.utils.parseEther("0.01") }), () => {
+                showResultMessage()
+                setOwnedNftForSwap(null);
+                setSelectedNftForSwap(null);
+                setSelectedNftId('');
+              });
             }}
           >
             Create an offer
@@ -835,7 +910,10 @@ function Home({ yourLocalBalance, readContracts, address, userSigner, tx, localP
                   onClick={async () => {
                     try {
                       const contract = new ethers.Contract(item.contractAddress, SWAPPER_ABI, userSigner)
-                      tx(contract.swap({ value: ethers.utils.parseEther("0.01") }), showResultMessage);
+                      // tx(contract.swap({ value: ethers.utils.parseEther("0.01") }), showResultMessage);
+                      tx(contract.swap({ value: ethers.utils.parseEther("0.01") }), () => {
+                        showResultMessage();
+                      });
                       // filterOffers();
                     }catch(e) {
                       console.error(e);  

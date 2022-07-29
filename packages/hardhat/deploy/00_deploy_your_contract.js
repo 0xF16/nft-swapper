@@ -15,29 +15,50 @@ const hashes = {
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
   const MY_BURNER_ADDRESS = "0x48F906e0e1dee59966c85E1Ee6D4B69950Cb4166";
+  const MY_BURNER_ADDRESS_2 = "0x97E36dafdcDE50C6322a7BbC9205500FF182E46F";
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy("SampleNft", {
-    from: deployer,
-    log: true,
-    waitConfirmations: 1,
-  });
+  // await deploy("SampleNft", {
+  //   from: deployer,
+  //   log: true,
+  //   waitConfirmations: 1,
+  // });
   await deploy("NftContractTest", {
     from: deployer,
     args: ["TestNftContract", "TNC"],
     log: true,
     waitConfirmations: 1,
   });
+
+  const MINT_NUMBER = 1000;
   const NftContractTest = await ethers.getContract("NftContractTest", deployer);
-  await NftContractTest.batchAddToWhitelist([MY_BURNER_ADDRESS, "0x97E36dafdcDE50C6322a7BbC9205500FF182E46F"], [10,10]);
+  // await NftContractTest.batchAddToWhitelist([MY_BURNER_ADDRESS, "0x97E36dafdcDE50C6322a7BbC9205500FF182E46F"], [10,10]);
+  
+  await NftContractTest.batchAddToWhitelist([MY_BURNER_ADDRESS, MY_BURNER_ADDRESS_2, deployer], [MINT_NUMBER, MINT_NUMBER, MINT_NUMBER]);
   await NftContractTest.transferOwnership(MY_BURNER_ADDRESS);
+  
+  for (let i = 1; i <= MINT_NUMBER; i++) {
+    if (i < 5) {
+      await NftContractTest.mintTest(MY_BURNER_ADDRESS);
+    } else if (i >= 5 && i <=10 ) {
+      await NftContractTest.mintTest(MY_BURNER_ADDRESS_2);
+    } else {
+      await NftContractTest.mint();
+
+    }
+    // await NftContractTest.mint({from: MY_BURNER_ADDRESS});
+  }
+
+  // for (let i = 1; i <= MINT_NUMBER; i++) {
+  //   await NftContractTest.safeTransferFrom(deployer, MY_BURNER_ADDRESS, i);
+  // }
 
 
-  const SampleNft = await ethers.getContract("SampleNft", deployer);
-  await SampleNft.transferOwnership(
-    MY_BURNER_ADDRESS
-  );
+  // const SampleNft = await ethers.getContract("SampleNft", deployer);
+  // await SampleNft.transferOwnership(
+  //   MY_BURNER_ADDRESS
+  // );
   // await SampleNft.mintItem(MY_BURNER_ADDRESS, hashes[1]);
   // for (let i = 1; i < 100; i++) {
   //   const nftId = i % 6;

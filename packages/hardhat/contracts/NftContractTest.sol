@@ -643,6 +643,15 @@ contract NftContractTest is Context, ERC165, IERC721, IERC721Metadata, Ownable {
     ) public onlyOwner {
         _base_uri = newBaseUri;
     }
+    
+    // added for testing
+    function mintTest(address toAddress) public {
+      require(mintPaused == false, "mint paused");
+      require(_addressData[toAddress].aux > 0, "caller not whitelisted");
+
+      _safeMint(toAddress, 1);
+      _addressData[toAddress].aux = _addressData[toAddress].aux - 1;  
+    }
 
     function mint() public {
       require(mintPaused == false, "mint paused");
