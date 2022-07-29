@@ -1194,7 +1194,7 @@ module.exports = {
   31337: {
     contracts: {
       TRANSPARENT_POWER: {
-        address: "0xB1D7308cEbaC8B67b49fC0F5Fb0125F258552fB2",
+        address: "0x497c00B7F0461515D7Cc1Fc6b9904539df378624",
         abi: ERC721ABI
       }
     }

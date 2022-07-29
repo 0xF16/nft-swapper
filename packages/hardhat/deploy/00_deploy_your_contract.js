@@ -14,8 +14,8 @@ const hashes = {
 
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
-  const MY_BURNER_ADDRESS = "0x48F906e0e1dee59966c85E1Ee6D4B69950Cb4166";
-  const MY_BURNER_ADDRESS_2 = "0x97E36dafdcDE50C6322a7BbC9205500FF182E46F";
+  const MY_BURNER_ADDRESS = "0x3088344bDCF01aF651Fd85D781d3002a4f13Cc5d";
+  const MY_BURNER_ADDRESS_2 = "0x4ed46E7812CcA9c199078e16D90eff94114c00e7";
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 

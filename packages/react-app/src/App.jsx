@@ -66,7 +66,7 @@ const initialNetwork = NETWORKS.localhost; // <------- select your target fronte
 // 😬 Sorry for all the console logging
 const DEBUG = true;
 const NETWORKCHECK = true;
-const USE_BURNER_WALLET = true; // toggle burner wallet feature
+const USE_BURNER_WALLET = false; // toggle burner wallet feature
 const USE_NETWORK_SELECTOR = false;
 
 
@@ -170,20 +170,10 @@ function App(props) {
 
   
 
-  // EXTERNAL CONTRACT EXAMPLE:
-  //
+  
+
   // If you want to bring in the mainnet DAI contract it would look like:
   const mainnetContracts = useContractLoader(mainnetProvider, contractConfig);
-
-  // If you want to call a function on a new block
-  useOnBlock(mainnetProvider, () => {
-    console.log(`⛓ A new mainnet block is here: ${mainnetProvider._lastBlockNumber}`);
-  });
-
-  // Then read your DAI balance like:
-  const myMainnetDAIBalance = useContractReader(mainnetContracts, "DAI", "balanceOf", [
-    "0x34aA3F359A9D614239015126635CE7732c18fDF3",
-  ]);
 
   // keep track of a variable from the contract in the local React state:
   const currentNftSwapper = useContractReader(readContracts, "NftSwapperFactory", "currentNftSwapperContract");
@@ -218,7 +208,6 @@ function App(props) {
       console.log("💵 yourMainnetBalance", yourMainnetBalance ? ethers.utils.formatEther(yourMainnetBalance) : "...");
       console.log("📝 readContracts", readContracts);
       console.log("🌍 DAI contract on mainnet:", mainnetContracts);
-      console.log("💵 yourMainnetDAIBalance", myMainnetDAIBalance);
       console.log("🔐 writeContracts", writeContracts);
     }
   }, [
@@ -231,7 +220,6 @@ function App(props) {
     writeContracts,
     mainnetContracts,
     localChainId,
-    myMainnetDAIBalance,
   ]);
 
 
@@ -312,50 +300,15 @@ function App(props) {
       <Alert message="This is still in beta version. Use at your own risk." type="warning" showIcon />
       <Menu style={{ textAlign: "center", marginTop: 20 }} selectedKeys={[location.pathname]} mode="horizontal">
         <Menu.Item key="/">
-          <Link to="/">App Home</Link>
+          <Link to="/">Swapper app</Link>
         </Menu.Item>
-        <Menu.Item key="/alternate">
-          <Link to="/alternate">Alternative app Home</Link>
+        <Menu.Item key="/faq">
+          <Link to="/faq">FAQ</Link>
         </Menu.Item>
-        {/* <Menu.Item key="/ui">
-          <Link to="/ui">UI</Link>
-        </Menu.Item> */}
-        <Menu.Item key="/nfts">
-          <Link to="/nfts">NFT collection</Link>
-        </Menu.Item>
-        <Menu.Item key="/nft">
-          <Link to="/nft">Transparent Powers Contract</Link>
-        </Menu.Item>
-        <Menu.Item key="/swapperfactory">
-          <Link to="/swapperfactory">NFT Swapper Factory Contract</Link>
-        </Menu.Item>
-        <Menu.Item key="/swapper">
-          <Link to="/swapper">NFT Swapper Contract</Link>
-        </Menu.Item>
-        {/* <Menu.Item key="/hints">
-          <Link to="/hints">Hints</Link>
-        </Menu.Item> */}
-        {/* <Menu.Item key="/subgraph">
-          <Link to="/subgraph">Subgraph</Link>
-        </Menu.Item> */}
       </Menu>
 
       <Switch>
         <Route exact path="/">
-          {/* pass in any web3 props to this Home component. For example, yourLocalBalance */}
-          <Home 
-            yourLocalBalance={yourLocalBalance} 
-            readContracts={readContracts}
-            address={address}
-            userSigner={userSigner}
-            tx={tx}
-            localProvider={localProvider}
-            writeContracts={writeContracts}
-
-          />
-        </Route>
-        <Route exact path="/alternate">
-          {/* pass in any web3 props to this Home component. For example, yourLocalBalance */}
           <HomeAlternate
             yourLocalBalance={yourLocalBalance} 
             readContracts={readContracts}
@@ -364,79 +317,9 @@ function App(props) {
             tx={tx}
             localProvider={localProvider}
             writeContracts={writeContracts}
-
-          />
-        </Route>
-        <Route path="/ui">
-          {/* <ExampleUI
-            address={address}
-            userSigner={userSigner}
-            mainnetProvider={mainnetProvider}
-            localProvider={localProvider}
-            yourLocalBalance={yourLocalBalance}
-            price={price}
-            tx={tx}
-            writeContracts={writeContracts}
-            readContracts={readContracts}
-            purpose={purpose}
-          /> */}
-        </Route>
-        {/* <Route path="/nfts">
-          <div style={{ width: 640, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
-            <List
-              bordered
-              dataSource={[]}
-              renderItem={item => {
-                const id = item.id.toNumber();
-                return (
-                  <List.Item key={id + "_" + item.uri + "_" + item.owner}>
-                    <Card
-                      title={
-                        <div>
-                          <span style={{ fontSize: 16, marginRight: 8 }}>#{id}</span> {item.name}
-                        </div>
-                      }
-                    >
-                      <div>
-                        <img src={item.image} style={{ maxWidth: 150 }} />
-                      </div>
-                      <div>{item.description}</div>
-                    </Card>
-
-                    <div>
-                      owner:{" "}
-                      <Address
-                        address={item.owner}
-                        ensProvider={mainnetProvider}
-                        blockExplorer={blockExplorer}
-                        fontSize={16}
-                      />
-                      <AddressInput
-                        ensProvider={mainnetProvider}
-                        placeholder="transfer to address"
-                        value={transferToAddresses[id]}
-                        onChange={newValue => {
-                          const update = {};
-                          update[id] = newValue;
-                          setTransferToAddresses({ ...transferToAddresses, ...update });
-                        }}
-                      />
-                      <Button
-                        onClick={() => {
-                          console.log("writeContracts", writeContracts);
-                          tx(writeContracts.SampleNft.transferFrom(address, transferToAddresses[id], id));
-                        }}
-                      >
-                        Transfer
-                      </Button>
-
-                    </div>
-                  </List.Item>
-                );
-              }}
             />
-          </div>
-            </Route> */}
+        </Route>
+
         <Route path="/nft">
           <Contract
             name="NftContractTest"
@@ -448,48 +331,6 @@ function App(props) {
             contractConfig={contractConfig}
           />
         </Route>
-        {/*
-        <Route exact path="/swapperfactory">
-
-          <Contract
-            name="NftSwapperFactory"
-            price={price}
-            signer={userSigner}
-            provider={localProvider}
-            address={address}
-            blockExplorer={blockExplorer}
-            contractConfig={contractConfig}
-          />
-        </Route>
-        <Route exact path="/swapper"> 
-
-          <Contract
-            name="NftSwapper"
-            price={price}
-            signer={userSigner}
-            provider={localProvider}
-            address={address}
-            blockExplorer={blockExplorer}
-            contractConfig={contractConfig}
-            // contractCustomAddress={currentNftSwapper}
-          />
-        </Route>
-        <Route path="/hints">
-          <Hints
-            address={address}
-            yourLocalBalance={yourLocalBalance}
-            mainnetProvider={mainnetProvider}
-            price={price}
-          />
-        </Route>
-        <Route path="/subgraph">
-          <Subgraph
-            subgraphUri={props.subgraphUri}
-            tx={tx}
-            writeContracts={writeContracts}
-            mainnetProvider={mainnetProvider}
-          />
-            </Route> */}
       </Switch>
 
       <ThemeSwitch />

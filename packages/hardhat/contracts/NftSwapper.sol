@@ -16,6 +16,7 @@ error SwapRejected(); //Error that happens when swap ended up with an error
 error OnlyNftOwnersCanExecute(); //Only users who hold specific tokens are permitted to execute this function
 error SwappedAlready(); //Happens when someone wants to execute the swap on the contract that already has been finished
 error SwapCancelled(); // Happens when someone wants to execute the swap on the contract that has been cancelled
+error OfferExpired(); // Happens when offer expires
 
 contract NftSwapper {
     address factoryAddress;
@@ -29,7 +30,7 @@ contract NftSwapper {
     uint256 timeInvalidAt;
     bool public swapSucceeded;
     bool public swapCancelled;
-
+    uint64 offerValidityTime = 6000;
     // event SwapSucceeded(address swapContractAddress);
 
     function create(
@@ -44,7 +45,7 @@ contract NftSwapper {
 
         nft1Id = _nft1Id;
         nft2Id = _nft2Id;
-
+        timeInvalidAt = block.number + offerValidityTime;
         factoryAddress  = payable(_factoryAddress);
     }
 
@@ -59,6 +60,7 @@ contract NftSwapper {
     function swap() public payable makerOrTaker {
         if (swapSucceeded == true) revert SwappedAlready();
         if (swapCancelled == true) revert SwapCancelled();
+        if (block.number > timeInvalidAt) revert OfferExpired();
         require(msg.value >= 0.01 ether, "You have to send at least 0.01 Ether to execute this transaction");
         address originalOwnerOfNft1 = nft1Contract.ownerOf(nft1Id);
         address originalOwnerOfNft2 = nft2Contract.ownerOf(nft2Id);
