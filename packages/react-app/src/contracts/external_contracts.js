@@ -1186,15 +1186,23 @@ module.exports = {
         abi: ERC20ABI,
       },
       TRANSPARENT_POWER: {
-        address: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+        address: "0xecdeb3fec697649e08b63d93cab0bb168c35eec5",
         abi: ERC721ABI
       }
     },
   },
+  4: {
+    contracts: {
+      TRANSPARENT_POWER: {
+        address: "0xC3D447E5992e6eCD59f0Cd2b853eaeF4EBf27200",
+        abi: ERC721ABI
+      }
+    }
+  },
   31337: {
     contracts: {
       TRANSPARENT_POWER: {
-        address: "0x497c00B7F0461515D7Cc1Fc6b9904539df378624",
+        address: "0xA7D656eb2986d4FA8fbD699030Fc6DCc9D45f625",
         abi: ERC721ABI
       }
     }

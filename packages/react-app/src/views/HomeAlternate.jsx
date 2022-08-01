@@ -4,32 +4,31 @@ import {
     message,
     Row, 
     List, 
-    Avatar, 
-    Checkbox, 
     Typography,
     Space,
     Select,
     Input,
-    Alert,
     Card,
     Tooltip,
-    Skeleton
+    Skeleton,
+    Empty,
+    Result
   } from "antd";
   
 import {
 
   useContractReader,
 } from "eth-hooks";
+import ConnectWallet from "../components/ConnectWallet";
 import { ethers } from "ethers";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { CheckCircleTwoTone, CloseCircleOutlined, ReloadOutlined, LoadingOutlined } from '@ant-design/icons';
-import { useEventListener } from "eth-hooks/events/useEventListener";
-import { from } from "@apollo/client";
+import { CheckCircleTwoTone, CloseCircleOutlined, ReloadOutlined, LoadingOutlined, WalletOutlined } from '@ant-design/icons';
 const { Title } = Typography;
 const { Option, OptGroup } = Select;
 const { Search } = Input;
 const { Meta } = Card;
+
 
 
 const ERC721_ABI = [
@@ -443,7 +442,7 @@ const fixUrl = (url) => {
   return url;
 }
 
-function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, tx, localProvider, writeContracts }) {
+function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, tx, localProvider, writeContracts, web3Modal, loadWeb3Modal, logoutOfWeb3Modal }) {
 
   const [yourNftForSwap, setYourNftForSwap] = useState();
   const [yourNftIdForSwap, setYourNftIdForSwap] = useState(null);
@@ -564,13 +563,11 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
   }
 
   const getMyNfts = async () => {
-    console.log('getting my nfts');
     setLoadingNftInProgress(true);
     setYourNftIdForSwap(null);
     const nftContract = readContracts.TRANSPARENT_POWER;
     const receivedFilter = readContracts.TRANSPARENT_POWER?.filters.Transfer(null, address);
     const sentFilter = readContracts.TRANSPARENT_POWER?.filters.Transfer(address, null);
-    console.log('[AK] filter', receivedFilter);
     const receivedEvents = await nftContract?.queryFilter(receivedFilter) || [];
     const sentEvents = await nftContract?.queryFilter(sentFilter) || [];
     const allEvents = [...receivedEvents, ...sentEvents];
@@ -634,7 +631,7 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
 
   useEffect(() => {
     getMyNfts();
-  }, [readContracts, userSigner]);
+  }, [readContracts, userSigner, address]);
 
   // useEffect(() => {
   //   if (!readContracts || !address) return;
@@ -643,192 +640,208 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
 
   return (
     <div>
-      
-      <div style={{ marginTop: 32, paddingBottom: 32, paddingRight: 32, paddingLeft: 32 }}>
+      {
+        address ?
+        <div style={{ marginTop: 32, paddingBottom: 32, paddingRight: 32, paddingLeft: 32 }}>
+          <Row justify="center" gutter={16}>
+            <Col xs={24} md={12}>
+              <Title level={4}>Select NFT</Title>
+              <Tooltip
+                title={"Refresh my NFTs"}
+              >
+                <Button
+                  onClick={getMyNfts}
+                  style={{marginRight: 20}}
+                >
+                  {
+                    loadingNftInProgress ?
+                    <LoadingOutlined />
+                    :
+                    <ReloadOutlined />
 
-        <Row justify="center" gutter={16}>
-          <Col xs={24} md={12}>
-            <Title level={4}>Select NFT</Title>
+                  }
+                </Button>
+              </Tooltip>
+              <Select 
+                defaultValue=""
+                showSearch
+                value={yourNftIdForSwap}
+                style={{ width: 220}}
+                onChange={(value) => setYourNftIdForSwap(value)}
+              >
+                {myNftsOptions}
+              </Select>
+              {yourNftForSwap ?
+                <Card
+                  style={{ width: 250, marginTop: 20, marginRight: "auto", marginLeft: "auto"}}
+                  cover={<img alt="nft image" src={yourNftForSwap.image} />}
+                  loading={cardLoading}
+                >
+                  <Meta title={<a target="_blank" href={"https://opensea.io/assets/ethereum/0xecdeb3fec697649e08b63d93cab0bb168c35eec5/" + yourNftForSwap.id}>{`${yourNftForSwap.name}`}</a>} description={`Owner: ${yourNftForSwap.owner}`} />
+                </Card>
+                :
+                <Empty 
+                  style={{marginTop: 30}}
+                  description={false} 
+                />
+              }
+            </Col>
+            <Col xs={24} md={12}>
+              <Title level={4}>Swap for</Title>
+              <Select 
+                defaultValue=""
+                value={targetNftIdForSwap} 
+                showSearch
+                style={{ width: 220 }}
+                onChange={(value) => setTargetNftIdForSwap(value)}
+              >
+                {otherNftsOptions}
+              </Select>
+              { targetNftForSwap ?
+                <Card
+                  style={{ width: 250, marginTop: 20, marginRight: "auto", marginLeft: "auto"}}
+                  cover={<img alt="nft image" src={targetNftForSwap.image} />}
+                  loading={cardLoading}
+                >
+                  <Meta title={<a target="_blank" href={"https://opensea.io/assets/ethereum/0xecdeb3fec697649e08b63d93cab0bb168c35eec5/" + targetNftForSwap.id}>{`${targetNftForSwap.name}`}</a>} description={`Owner: ${targetNftForSwap.owner}`} />
+                </Card>
+                :
+                <Empty 
+                  style={{marginTop: 30}}
+                  description={false} 
+                />
+
+              }
+            </Col>
+          <div style={{width: 900, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
+            <Button
+              disabled={!yourNftForSwap || !targetNftForSwap}
+              onClick={async() => {
+                tx(writeContracts.NftSwapperFactory.clone(readContracts.TRANSPARENT_POWER.address, yourNftForSwap.id, readContracts.TRANSPARENT_POWER.address, targetNftForSwap.id, { value: ethers.utils.parseEther("0.01") }));
+              }}
+            >
+              Create an offer
+            </Button>
+          </div>
+          </Row>
+          <Title level={3}>
             <Tooltip
-              title={"Refresh my NFTs"}
+              title={"Refresh offers"}
             >
               <Button
-                onClick={getMyNfts}
+                onClick={getOffers}
                 style={{marginRight: 20}}
-              >
+                >
                 {
-                  loadingNftInProgress ?
+                  
+                  offersLoading ?
                   <LoadingOutlined />
                   :
                   <ReloadOutlined />
-
+                  
                 }
               </Button>
+
             </Tooltip>
-            <Select 
-              defaultValue=""
-              showSearch
-              value={yourNftIdForSwap}
-              style={{ width: 220}}
-              onChange={(value) => setYourNftIdForSwap(value)}
-            >
-              {myNftsOptions}
-            </Select>
-            {yourNftForSwap ?
-              <Card
-                style={{ width: 250, marginTop: 20, marginRight: "auto", marginLeft: "auto"}}
-                cover={<img alt="nft image" src={yourNftForSwap.image} />}
-                loading={cardLoading}
-              >
-                <Meta title={<a target="_blank" href={"https://opensea.io/assets/ethereum/0xecdeb3fec697649e08b63d93cab0bb168c35eec5/" + yourNftForSwap.id}>{`${yourNftForSwap.name}`}</a>} description={`Owner: ${yourNftForSwap.owner}`} />
-              </Card>
-              :
-              <Skeleton loading={true}  />
-            }
-          </Col>
-          <Col xs={24} md={12}>
-            <Title level={4}>Swap for</Title>
-            <Select 
-              defaultValue=""
-              value={targetNftIdForSwap} 
-              showSearch
-              style={{ width: 220 }}
-              onChange={(value) => setTargetNftIdForSwap(value)}
-            >
-              {otherNftsOptions}
-            </Select>
-            { targetNftForSwap ?
-              <Card
-                style={{ width: 250, marginTop: 20, marginRight: "auto", marginLeft: "auto"}}
-                cover={<img alt="nft image" src={targetNftForSwap.image} />}
-                loading={cardLoading}
-              >
-                <Meta title={<a target="_blank" href={"https://opensea.io/assets/ethereum/0xecdeb3fec697649e08b63d93cab0bb168c35eec5/" + targetNftForSwap.id}>{`${targetNftForSwap.name}`}</a>} description={`Owner: ${targetNftForSwap.owner}`} />
-              </Card>
-              :
-              <Skeleton loading={true}  />
+            Offers
+          </Title>
+          {
+            offersLoading ? 
+            <Skeleton active paragraph={{ rows: 2 }} />
+            :
+            <List
+              dataSource={offers}
+              itemLayout="horizontal"
+              renderItem={item => {
+                return (
+                  <List.Item 
+                    key={item.blockNumber}
+                    actions={[
+                      <Button
+                        disabled={item.yourNft.approved}
+                        onClick={() => {
+                          const nftContract = new ethers.Contract(item.yourNft.address, ERC721_ABI, userSigner);
+                          // tx(writeContracts.SampleNft.approve(item.contractAddress, item.id));
+                          tx(nftContract.approve(item.contractAddress, item.yourNft.id));
+                          // filterOffers();
+                        }}
+                        >
+                        {item.yourNft.approved ? (<Space><CheckCircleTwoTone twoToneColor="#52c41a" /> Approved</Space>)  : "Approve"}
+                      </Button>, 
+                      <Button
+                        type="primary"
+                        disabled={!item.yourNft.approved || !item.otherNft.approved}
+                        onClick={async () => {
+                          try {
+                            const contract = new ethers.Contract(item.contractAddress, SWAPPER_ABI, userSigner);
+                            console.log('Swapper', contract);
+                            tx(contract.swap({ value: ethers.utils.parseEther("0.01") }));
+                          }catch(e) {
+                            console.error(e);  
+                          }
+                        }}
+                      >
+                        Swap
+                      </Button>, 
+                      <Button
+                        type="danger"
+                        onClick={async () => {
+                          try {
+                            const contract = new ethers.Contract(item.contractAddress, SWAPPER_ABI, userSigner)
+                            tx(contract.cancelSwap());
+                          }catch(e) {
+                            console.error(e);  
+                          }
+                        }}
+                      >
+                        <Space><CloseCircleOutlined/> Reject</Space>
+                      </Button>
+                    ]}
+                  >
+                    <List.Item.Meta
+                      title={`Offer to exchange your NFT: ${item.yourNft.id} for NFT: ${item.otherNft.id}`}
+                      description={!item.otherNft.approved ? "Awaiting approval from your exchange partner" : "Your exchange partner has approved the transaction"}
+                    />
+                  </List.Item>
+                );
+              }}
+            />
 
-            }
-          </Col>
-        <div style={{width: 900, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
-          <Button
-            disabled={!yourNftForSwap || !targetNftForSwap}
-            onClick={async() => {
-              tx(writeContracts.NftSwapperFactory.clone(readContracts.TRANSPARENT_POWER.address, yourNftForSwap.id, readContracts.TRANSPARENT_POWER.address, targetNftForSwap.id, { value: ethers.utils.parseEther("0.01") }), () => {
-                showResultMessage()
-              });
-            }}
-          >
-            Create an offer
-          </Button>
-        </div>
-        </Row>
-        <Title level={3}>
-          <Tooltip
-            title={"Refresh offers"}
-          >
-            <Button
-              onClick={getOffers}
-              style={{marginRight: 20}}
-              >
-              {
-                
-                offersLoading ?
-                <LoadingOutlined />
-                :
-                <ReloadOutlined />
-                
-              }
-            </Button>
-
-          </Tooltip>
-          Offers
-        </Title>
-        {
-          offersLoading ? 
-          <Skeleton active paragraph={{ rows: 2 }} />
-          :
+          }
+          
+          {/* <Title level={3}>Offer history</Title>
           <List
-            dataSource={offers}
+            dataSource={offerHistory}
             itemLayout="horizontal"
             renderItem={item => {
               return (
                 <List.Item 
-                  key={item.blockNumber}
-                  actions={[
-                    <Button
-                      disabled={item.yourNft.approved}
-                      onClick={() => {
-                        const nftContract = new ethers.Contract(item.yourNft.address, ERC721_ABI, userSigner);
-                        // tx(writeContracts.SampleNft.approve(item.contractAddress, item.id));
-                        tx(nftContract.approve(item.contractAddress, item.yourNft.id), showResultMessage);
-                        // filterOffers();
-                      }}
-                      >
-                      {item.yourNft.approved ? (<Space><CheckCircleTwoTone twoToneColor="#52c41a" /> Approved</Space>)  : "Approve"}
-                    </Button>, 
-                    <Button
-                      type="primary"
-                      disabled={!item.yourNft.approved || !item.otherNft.approved}
-                      onClick={async () => {
-                        try {
-                          const contract = new ethers.Contract(item.contractAddress, SWAPPER_ABI, userSigner)
-                          // tx(contract.swap({ value: ethers.utils.parseEther("0.01") }), showResultMessage);
-                          tx(contract.swap({ value: ethers.utils.parseEther("0.01") }), showResultMessage);
-                          // filterOffers();
-                        }catch(e) {
-                          console.error(e);  
-                        }
-                      }}
-                    >
-                      Swap
-                    </Button>, 
-                    <Button
-                      type="danger"
-                      onClick={async () => {
-                        try {
-                          const contract = new ethers.Contract(item.contractAddress, SWAPPER_ABI, userSigner)
-                          tx(contract.cancelSwap());
-                        }catch(e) {
-                          console.error(e);  
-                        }
-                      }}
-                    >
-                      <Space><CloseCircleOutlined/> Reject</Space>
-                    </Button>
-                  ]}
+                  key={item.blockNumber + item.yourNft.id + item.otherNft.id}
                 >
                   <List.Item.Meta
-                    title={`Offer to exchange your NFT: ${item.yourNft.id} for NFT: ${item.otherNft.id}`}
-                    description={!item.otherNft.approved ? "Awaiting approval from your exchange partner" : "Your exchange partner has approved the transaction"}
+                    title={`Offer to exchange NFT: ${item.yourNft.id} for NFT: ${item.otherNft.id}`}
+                    description={"Swap executed"}
                   />
                 </List.Item>
               );
             }}
           />
+          */}
+        </div>
+        :
+        <Row justify="center" align="middle">
+          <Result
+            icon={<WalletOutlined />}
+            title="Connect your wallet to start"
+            extra={<ConnectWallet web3Modal={web3Modal} loadWeb3Modal={loadWeb3Modal} logoutOfWeb3Modal={logoutOfWeb3Modal}/>}
+          />
+          
+        </Row>
+      }
 
-        }
-        
-        {/* <Title level={3}>Offer history</Title>
-        <List
-          dataSource={offerHistory}
-          itemLayout="horizontal"
-          renderItem={item => {
-            return (
-              <List.Item 
-                key={item.blockNumber + item.yourNft.id + item.otherNft.id}
-              >
-                <List.Item.Meta
-                  title={`Offer to exchange NFT: ${item.yourNft.id} for NFT: ${item.otherNft.id}`}
-                  description={"Swap executed"}
-                />
-              </List.Item>
-            );
-          }}
-        />
-        */}
-      </div>
     </div>
+    
+
   );
 }
   

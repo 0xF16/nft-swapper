@@ -39,7 +39,6 @@ import { useStaticJsonRPC } from "./hooks";
 import { create } from "ipfs-http-client";
 
 const { ethers } = require("ethers");
-
 const ipfs = create({ host: "ipfs.infura.io", port: "5001", protocol: "https" });
 /*
     Welcome to 🏗 scaffold-eth !
@@ -61,7 +60,7 @@ const ipfs = create({ host: "ipfs.infura.io", port: "5001", protocol: "https" })
 */
 
 /// 📡 What chain are your contracts deployed to?
-const initialNetwork = NETWORKS.localhost; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
+const initialNetwork = NETWORKS.rinkeby; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 
 // 😬 Sorry for all the console logging
 const DEBUG = true;
@@ -89,11 +88,6 @@ function App(props) {
   const [injectedProvider, setInjectedProvider] = useState();
   const [address, setAddress] = useState();
   const [selectedNetwork, setSelectedNetwork] = useState(networkOptions[0]);
-  const [transferToAddresses, setTransferToAddresses] = useState({});
-
-  const [minting, setMinting] = useState(false);
-
-  const [count, setCount] = useState(1);
   const location = useLocation();
 
   const targetNetwork = NETWORKS[selectedNetwork];
@@ -317,10 +311,13 @@ function App(props) {
             tx={tx}
             localProvider={localProvider}
             writeContracts={writeContracts}
+            web3Modal={web3Modal}
+            loadWeb3Modal={loadWeb3Modal}
+            logoutOfWeb3Modal={logoutOfWeb3Modal}
             />
         </Route>
 
-        <Route path="/nft">
+        {/* <Route path="/nft">
           <Contract
             name="NftContractTest"
             price={price}
@@ -330,6 +327,10 @@ function App(props) {
             blockExplorer={blockExplorer}
             contractConfig={contractConfig}
           />
+        </Route> */}
+        <Route path="/faq">
+
+
         </Route>
       </Switch>
 
@@ -338,17 +339,10 @@ function App(props) {
       {/* 🗺 Extra UI like gas price, eth price, faucet, and support: */}
       <div style={{ position: "fixed", textAlign: "left", left: 0, bottom: 20, padding: 10 }}>
         <Row align="middle" gutter={[4, 4]}>
-          <Col span={8}>
-            <Ramp price={price} address={address} networks={NETWORKS} />
-          </Col>
-
-          <Col span={8} style={{ textAlign: "center", opacity: 0.8 }}>
-            <GasGauge gasPrice={gasPrice} />
-          </Col>
           <Col span={8} style={{ textAlign: "center", opacity: 1 }}>
             <Button
               onClick={() => {
-                window.open("https://t.me/joinchat/KByvmRe5wkR-8F_zz6AjpA");
+                window.open("https://t.me/+BVe0pDIZyLwxNjc8");
               }}
               size="large"
               shape="round"

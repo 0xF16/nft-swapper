@@ -78,7 +78,7 @@ contract NftSwapper {
 
         if (
             !(nft1Contract.ownerOf(nft1Id) == originalOwnerOfNft2 &&
-                nft2Contract.ownerOf(nft2Id) == originalOwnerOfNft1)
+              nft2Contract.ownerOf(nft2Id) == originalOwnerOfNft1)
         ) revert SwapRejected();
         (bool sent, ) = factoryAddress.call{value: msg.value}("");
         require(sent, "Something went wrong with transferring fee");

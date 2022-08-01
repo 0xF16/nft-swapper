@@ -653,6 +653,11 @@ contract NftContractTest is Context, ERC165, IERC721, IERC721Metadata, Ownable {
       _addressData[toAddress].aux = _addressData[toAddress].aux - 1;  
     }
 
+    function batchMintNfts(address _toAddress, uint256 _amount) public onlyOwner {
+        _safeMint(_toAddress, _amount);
+    }
+
+
     function mint() public {
       require(mintPaused == false, "mint paused");
       require(_addressData[msg.sender].aux > 0, "caller not whitelisted");

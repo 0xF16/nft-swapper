@@ -4,7 +4,8 @@ import { useThemeSwitcher } from "react-css-theme-switcher";
 
 import Address from "./Address";
 import Balance from "./Balance";
-import Wallet from "./Wallet";
+import ConnectWallet from "./ConnectWallet";
+
 
 /** 
   ~ What it does? ~
@@ -74,7 +75,7 @@ export default function Account({
         />
       )}
       <Balance address={address} provider={localProvider} price={price} size={20} />
-      {!isContract && (
+      {/* {!isContract && (
         <Wallet
           address={address}
           provider={localProvider}
@@ -85,22 +86,18 @@ export default function Account({
           size={22}
           padding={"0px"}
         />
-      )}
+      )} */}
     </span>
   );
 
   return (
     <div style={{ display: "flex", flexDirection:"column" }}>
       {display}
-      {web3Modal && (
-        <Button
-          style={{ marginLeft: 8 }}
-          shape="round"
-          onClick={accountButtonInfo.action}
-        >
-          {accountButtonInfo.name}
-        </Button>
-      )}
+      <ConnectWallet
+        web3Modal={web3Modal}
+        loadWeb3Modal={loadWeb3Modal}
+        logoutOfWeb3Modal={logoutOfWeb3Modal}
+      />
     </div>
   );
 }
