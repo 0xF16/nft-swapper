@@ -1,5 +1,7 @@
-import { Button, Col, Menu, Row } from "antd";
+import { Button, Col, Menu, Row, Alert } from "antd";
 import "antd/dist/antd.css";
+
+
 import {
   useBalance,
   useContractLoader,
@@ -10,6 +12,7 @@ import {
 } from "eth-hooks";
 import { useExchangeEthPrice } from "eth-hooks/dapps/dex";
 import React, { useCallback, useEffect, useState } from "react";
+
 import { Link, Route, Switch, useLocation } from "react-router-dom";
 import "./App.css";
 import {
@@ -23,16 +26,20 @@ import {
   NetworkDisplay,
   FaucetHint,
   NetworkSwitch,
+
 } from "./components";
 import { NETWORKS, ALCHEMY_KEY } from "./constants";
 import externalContracts from "./contracts/external_contracts";
+
 // contracts
 import deployedContracts from "./contracts/hardhat_contracts.json";
 import { Transactor, Web3ModalSetup } from "./helpers";
-import { Home, ExampleUI, Hints, Subgraph } from "./views";
+import { Home, HomeAlternate, ExampleUI, Hints, Subgraph } from "./views";
 import { useStaticJsonRPC } from "./hooks";
+import { create } from "ipfs-http-client";
 
 const { ethers } = require("ethers");
+const ipfs = create({ host: "ipfs.infura.io", port: "5001", protocol: "https" });
 /*
     Welcome to 🏗 scaffold-eth !
 
@@ -53,13 +60,16 @@ const { ethers } = require("ethers");
 */
 
 /// 📡 What chain are your contracts deployed to?
-const initialNetwork = NETWORKS.localhost; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
+const initialNetwork = NETWORKS.rinkeby; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 
 // 😬 Sorry for all the console logging
 const DEBUG = true;
 const NETWORKCHECK = true;
-const USE_BURNER_WALLET = true; // toggle burner wallet feature
+const USE_BURNER_WALLET = false; // toggle burner wallet feature
 const USE_NETWORK_SELECTOR = false;
+
+
+
 
 const web3Modal = Web3ModalSetup();
 
@@ -151,20 +161,13 @@ function App(props) {
   // If you want to make 🔐 write transactions to your contracts, use the userSigner:
   const writeContracts = useContractLoader(userSigner, contractConfig, localChainId);
 
-  // EXTERNAL CONTRACT EXAMPLE:
-  //
+
+  
+
+  
+
   // If you want to bring in the mainnet DAI contract it would look like:
   const mainnetContracts = useContractLoader(mainnetProvider, contractConfig);
-
-  // If you want to call a function on a new block
-  useOnBlock(mainnetProvider, () => {
-    console.log(`⛓ A new mainnet block is here: ${mainnetProvider._lastBlockNumber}`);
-  });
-
-  // Then read your DAI balance like:
-  const myMainnetDAIBalance = useContractReader(mainnetContracts, "DAI", "balanceOf", [
-    "0x34aA3F359A9D614239015126635CE7732c18fDF3",
-  ]);
 
   // keep track of a variable from the contract in the local React state:
   const currentNftSwapper = useContractReader(readContracts, "NftSwapperFactory", "currentNftSwapperContract");
@@ -173,7 +176,8 @@ function App(props) {
   const addressFromENS = useResolveName(mainnetProvider, "austingriffith.eth");
   console.log("🏷 Resolved austingriffith.eth as:",addressFromENS)
   */
-
+//  const test = useContractReader(readContracts, "TRANSPARENT_POWER", "totalSupply");
+//  console.log('[AK] total ', test);
   //
   // 🧫 DEBUG 👨🏻‍🔬
   //
@@ -198,7 +202,6 @@ function App(props) {
       console.log("💵 yourMainnetBalance", yourMainnetBalance ? ethers.utils.formatEther(yourMainnetBalance) : "...");
       console.log("📝 readContracts", readContracts);
       console.log("🌍 DAI contract on mainnet:", mainnetContracts);
-      console.log("💵 yourMainnetDAIBalance", myMainnetDAIBalance);
       console.log("🔐 writeContracts", writeContracts);
     }
   }, [
@@ -211,8 +214,8 @@ function App(props) {
     writeContracts,
     mainnetContracts,
     localChainId,
-    myMainnetDAIBalance,
   ]);
+
 
   const loadWeb3Modal = useCallback(async () => {
     const provider = await web3Modal.connect();
@@ -235,7 +238,7 @@ function App(props) {
     });
     // eslint-disable-next-line
   }, [setInjectedProvider]);
-
+// 
   useEffect(() => {
     if (web3Modal.cachedProvider) {
       loadWeb3Modal();
@@ -244,13 +247,15 @@ function App(props) {
 
   const faucetAvailable = localProvider && localProvider.connection && targetNetwork.name.indexOf("local") !== -1;
 
+
+
   return (
     <div className="App">
       {/* ✏️ Edit the header and change the title to your project name */}
       <Header>
         {/* 👨‍💼 Your account is in the top right with a wallet at connect options */}
         <div style={{ position: "relative", display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", flex: 1 }}>
+          <div style={{ display: "flex", flex: 1, flexDirection: "row" }}>
             {USE_NETWORK_SELECTOR && (
               <div style={{ marginRight: 20 }}>
                 <NetworkSwitch
@@ -286,52 +291,35 @@ function App(props) {
         logoutOfWeb3Modal={logoutOfWeb3Modal}
         USE_NETWORK_SELECTOR={USE_NETWORK_SELECTOR}
       />
+      <Alert message="This is still in beta version. Use at your own risk." type="warning" showIcon />
       <Menu style={{ textAlign: "center", marginTop: 20 }} selectedKeys={[location.pathname]} mode="horizontal">
         <Menu.Item key="/">
-          <Link to="/">App Home</Link>
+          <Link to="/">Swapper app</Link>
         </Menu.Item>
-        {/* <Menu.Item key="/ui">
-          <Link to="/ui">UI</Link>
-        </Menu.Item> */}
-        <Menu.Item key="/nft">
-          <Link to="/nft">Sample NFT Contract</Link>
+        <Menu.Item key="/faq">
+          <Link to="/faq">FAQ</Link>
         </Menu.Item>
-        <Menu.Item key="/swapperfactory">
-          <Link to="/swapperfactory">NFT Swapper Factory Contract</Link>
-        </Menu.Item>
-        <Menu.Item key="/swapper">
-          <Link to="/swapper">NFT Swapper Contract</Link>
-        </Menu.Item>
-        {/* <Menu.Item key="/hints">
-          <Link to="/hints">Hints</Link>
-        </Menu.Item> */}
-        {/* <Menu.Item key="/subgraph">
-          <Link to="/subgraph">Subgraph</Link>
-        </Menu.Item> */}
       </Menu>
 
       <Switch>
         <Route exact path="/">
-          {/* pass in any web3 props to this Home component. For example, yourLocalBalance */}
-          <Home yourLocalBalance={yourLocalBalance} readContracts={readContracts} />
-        </Route>
-        <Route path="/ui">
-          {/* <ExampleUI
+          <HomeAlternate
+            yourLocalBalance={yourLocalBalance} 
+            readContracts={readContracts}
             address={address}
             userSigner={userSigner}
-            mainnetProvider={mainnetProvider}
+            tx={tx}
             localProvider={localProvider}
-            yourLocalBalance={yourLocalBalance}
-            price={price}
-            tx={tx}
             writeContracts={writeContracts}
-            readContracts={readContracts}
-            purpose={purpose}
-          /> */}
+            web3Modal={web3Modal}
+            loadWeb3Modal={loadWeb3Modal}
+            logoutOfWeb3Modal={logoutOfWeb3Modal}
+            />
         </Route>
-        <Route path="/nft">
+
+        {/* <Route path="/nft">
           <Contract
-            name="SampleNft"
+            name="NftContractTest"
             price={price}
             signer={userSigner}
             provider={localProvider}
@@ -339,55 +327,10 @@ function App(props) {
             blockExplorer={blockExplorer}
             contractConfig={contractConfig}
           />
-        </Route>
-        <Route exact path="/swapperfactory">
-          {/*
-                🎛 this scaffolding is full of commonly used components
-                this <Contract/> component will automatically parse your ABI
-                and give you a form to interact with it locally
-            */}
-          <Contract
-            name="NftSwapperFactory"
-            price={price}
-            signer={userSigner}
-            provider={localProvider}
-            address={address}
-            blockExplorer={blockExplorer}
-            contractConfig={contractConfig}
-          />
-        </Route>
-        <Route exact path="/swapper">
-          {/*
-                🎛 this scaffolding is full of commonly used components
-                this <Contract/> component will automatically parse your ABI
-                and give you a form to interact with it locally
-            */}
-          <Contract
-            name="NftSwapper"
-            price={price}
-            signer={userSigner}
-            provider={localProvider}
-            address={address}
-            blockExplorer={blockExplorer}
-            contractConfig={contractConfig}
-            // contractCustomAddress={currentNftSwapper}
-          />
-        </Route>
-        <Route path="/hints">
-          <Hints
-            address={address}
-            yourLocalBalance={yourLocalBalance}
-            mainnetProvider={mainnetProvider}
-            price={price}
-          />
-        </Route>
-        <Route path="/subgraph">
-          <Subgraph
-            subgraphUri={props.subgraphUri}
-            tx={tx}
-            writeContracts={writeContracts}
-            mainnetProvider={mainnetProvider}
-          />
+        </Route> */}
+        <Route path="/faq">
+
+
         </Route>
       </Switch>
 
@@ -396,17 +339,10 @@ function App(props) {
       {/* 🗺 Extra UI like gas price, eth price, faucet, and support: */}
       <div style={{ position: "fixed", textAlign: "left", left: 0, bottom: 20, padding: 10 }}>
         <Row align="middle" gutter={[4, 4]}>
-          <Col span={8}>
-            <Ramp price={price} address={address} networks={NETWORKS} />
-          </Col>
-
-          <Col span={8} style={{ textAlign: "center", opacity: 0.8 }}>
-            <GasGauge gasPrice={gasPrice} />
-          </Col>
           <Col span={8} style={{ textAlign: "center", opacity: 1 }}>
             <Button
               onClick={() => {
-                window.open("https://t.me/joinchat/KByvmRe5wkR-8F_zz6AjpA");
+                window.open("https://t.me/+BVe0pDIZyLwxNjc8");
               }}
               size="large"
               shape="round"
