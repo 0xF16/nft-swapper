@@ -26,8 +26,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
   // const NftContractTest = await ethers.getContract("NftContractTest", deployer);
  
-  // await NftContractTest.batchMintNfts(MY_BURNER_ADDRESS, 5);
-  // await NftContractTest.batchMintNfts(MY_BURNER_ADDRESS_2, 5);
+  // await NftContractTest.batchMintNfts(MY_BURNER_ADDRESS, 10);
+  // await NftContractTest.batchMintNfts(MY_BURNER_ADDRESS_2, 10);
   // await NftContractTest.batchMintNfts(deployer, 100);
   // await NftContractTest.transferOwnership(MY_BURNER_ADDRESS);
   // // NFT deployment

@@ -1,32 +1,14 @@
-import { 
-    Button, 
-    Col, 
-    message,
-    Row, 
-    List, 
-    Typography,
-    Space,
-    Select,
-    Input,
-    Card,
-    Tooltip,
-    Skeleton,
-    Empty,
-    Result
-  } from "antd";
+import { Button, Col, Row, List, Typography, Space, Select, Input, Card, Tooltip, Skeleton, Empty, Result } from "antd";
   
-import {
-
-  useContractReader,
-} from "eth-hooks";
+import { useContractReader } from "eth-hooks";
 import ConnectWallet from "../components/ConnectWallet";
+import Address from "../components/Address";
 import { ethers } from "ethers";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { CheckCircleTwoTone, CloseCircleOutlined, ReloadOutlined, LoadingOutlined, WalletOutlined } from '@ant-design/icons';
-const { Title } = Typography;
-const { Option, OptGroup } = Select;
-const { Search } = Input;
+const { Title, Text } = Typography;
+const { Option } = Select;
 const { Meta } = Card;
 
 
@@ -442,7 +424,7 @@ const fixUrl = (url) => {
   return url;
 }
 
-function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, tx, localProvider, writeContracts, web3Modal, loadWeb3Modal, logoutOfWeb3Modal }) {
+function HomeAlternate({ mainnetProvider, localProvider, readContracts, address, userSigner, tx, blockExplorer, writeContracts, web3Modal, loadWeb3Modal, logoutOfWeb3Modal }) {
 
   const [yourNftForSwap, setYourNftForSwap] = useState();
   const [yourNftIdForSwap, setYourNftIdForSwap] = useState(null);
@@ -450,7 +432,6 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
   const [targetNftIdForSwap, setTargetNftIdForSwap] = useState(null);
   
   const [offers, setOffers] = useState([]);
-  const [modalVisible, setModalVisible] = useState(false);
   const [yourNfts, setYourNfts] = useState([]);
 
   const [myNftsOptions, setMyNftsOptions] = useState([]);
@@ -460,12 +441,6 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
   const [offersLoading, setOffersLoading] = useState(false);
   const [loadingNftInProgress, setLoadingNftInProgress] = useState(false);
 
-  const showModal = () => {
-    setModalVisible(true);
-  }
-  const hideModal = () => {
-    setModalVisible(false);
-  }
   // const offerEvents = useEventListener(readContracts, "NftSwapperFactory", "OfferCreated", localProvider, 1);
 
   const nftTotalSupply = useContractReader(readContracts, "TRANSPARENT_POWER", "totalSupply");
@@ -491,12 +466,6 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
     }
   }
 
-  const showResultMessage = (update) => {
-    if (update && (update.status === "confirmed" || update.status === 1)) {
-      message.success('Transaction confirmed!');
-    }
-  } 
-
   const getOffers = async () => {
     setOffersLoading(true);
 
@@ -505,16 +474,13 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
       const nft = yourNfts[i];
       let filter = readContracts.NftSwapperFactory?.filters.OfferCreated(readContracts.TRANSPARENT_POWER.address, nft.id);
       const offers = await readContracts.NftSwapperFactory?.queryFilter(filter, -1800, "latest");
-      console.log('offers', offers);
       allOffers.push(...offers);
     }
 
     const filteredOffers =  await (Promise.all(allOffers.map(async (item) => {
       const contractAddress = item.args[2];
       const swapperContract = new ethers.Contract(contractAddress, SWAPPER_ABI, userSigner);
-      // const swapSucceeded = await swapperContract.swapSucceeded();
       const swapperStatus = await swapperContract.getSwapperStatus();
-      console.log('swapperStatus', swapperStatus);
       const nft1Address = swapperStatus[0];
       const nft1Id = swapperStatus[1];
       const nft2Address = swapperStatus[2];
@@ -556,20 +522,26 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
         include,
       } 
     })))
-
     setOffers(filteredOffers.filter(v => v.include).map(data => data.value));
     setOffersLoading(false);
 
   }
 
   const getMyNfts = async () => {
+    if (!address || !readContracts.TRANSPARENT_POWER) return;
     setLoadingNftInProgress(true);
     setYourNftIdForSwap(null);
-    const nftContract = readContracts.TRANSPARENT_POWER;
-    const receivedFilter = readContracts.TRANSPARENT_POWER?.filters.Transfer(null, address);
-    const sentFilter = readContracts.TRANSPARENT_POWER?.filters.Transfer(address, null);
-    const receivedEvents = await nftContract?.queryFilter(receivedFilter) || [];
-    const sentEvents = await nftContract?.queryFilter(sentFilter) || [];
+
+    const nftContract = new ethers.Contract(readContracts.TRANSPARENT_POWER.address, ERC721_ABI, userSigner);
+    const receivedFilter = nftContract.filters.Transfer(null, address);
+    const sentFilter = nftContract.filters.Transfer(address, null);
+    
+    const receivedEvents = await nftContract.queryFilter(receivedFilter, 0, "latest") || [];
+    const sentEvents = await nftContract.queryFilter(sentFilter) || [];
+    
+    // console.log("[events]", receivedEvents);
+    // console.log("[events]", sentEvents);
+
     const allEvents = [...receivedEvents, ...sentEvents];
     const myFilteredEvents = allEvents.reduce((reduced, currentEvent) => {
       const { args } = currentEvent;
@@ -590,9 +562,9 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
 
     const yourNftsArr = [];
     for (let nftId in myFilteredEvents)  {
-      if (myFilteredEvents[nftId].owned == 1) {
+      if (myFilteredEvents[nftId].owned === 1) {
         try {
-          yourNftsArr.push({id: myFilteredEvents[nftId].nftId});
+          yourNftsArr.push({ id: myFilteredEvents[nftId].nftId });
         } catch (e) {
           console.log('[AKgetMyNfts]' + e);
         }
@@ -601,73 +573,58 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
 
     setYourNfts(yourNftsArr);
     setLoadingNftInProgress(false);
-    const nftsOptions = yourNftsArr.map((nft) => {
-      return <Option value={nft.id.toNumber()}>{`Transparent power #${nft.id.toNumber()}`}</Option>
+    const nftsOptions = yourNftsArr.map((nft, index) => {
+      return <Option key={index} value={nft.id.toNumber()}>{`Transparent power #${nft.id.toNumber()}`}</Option>;
     });
     setMyNftsOptions(nftsOptions);
-  }
-
+  };
 
   useEffect(() => {
+    setTargetNftIdForSwap(null);
+    setOtherNftsOptions([]);
     getOffers();
-  }, [yourNfts])
+  }, [yourNfts]);
 
-    
   useEffect(() => {
     pullNftDetails(yourNftIdForSwap, setYourNftForSwap);
-    const yourNftsNumbers = yourNfts.map((value) => {
+    const yourNftsNumbers = yourNfts.map(value => {
       return value.id.toNumber();
     });
-    const otherOptionsArr  = [];
-    for (let i = 1; i<= nftTotalSupply; i++) {
-      otherOptionsArr.push(<Option disabled={yourNftsNumbers.includes(i)} value={i}>{`Transparent power #${i}`}</Option>)
+    const otherOptionsArr = [];
+    for (let i = 1; i <= nftTotalSupply; i++) {
+      otherOptionsArr.push(
+        <Option key={i} disabled={yourNftsNumbers.includes(i)} value={i}>{`Transparent power #${i}`}</Option>
+      );
     }
     setOtherNftsOptions(otherOptionsArr);
-  }, [yourNftIdForSwap])
-    
+  }, [yourNftIdForSwap]);
+
   useEffect(() => {
     pullNftDetails(targetNftIdForSwap, setTargetNftForSwap);
-  }, [targetNftIdForSwap])
+  }, [targetNftIdForSwap]);
 
   useEffect(() => {
     getMyNfts();
   }, [readContracts, userSigner, address]);
 
-  // useEffect(() => {
-  //   if (!readContracts || !address) return;
-  //   getMyNfts();
-  // }, []);
-
   return (
     <div>
-      {
-        address ?
+      {address ? (
         <div style={{ marginTop: 32, paddingBottom: 32, paddingRight: 32, paddingLeft: 32 }}>
           <Row justify="center" gutter={16}>
             <Col xs={24} md={12}>
-              <Title level={4}>Select NFT</Title>
-              <Tooltip
-                title={"Refresh my NFTs"}
-              >
-                <Button
-                  onClick={getMyNfts}
-                  style={{marginRight: 20}}
-                >
-                  {
-                    loadingNftInProgress ?
-                    <LoadingOutlined />
-                    :
-                    <ReloadOutlined />
-
-                  }
+              <Title level={4}>Select your NFT</Title>
+              <Tooltip title={"Refresh my NFTs"}>
+                <Button onClick={getMyNfts} style={{ marginRight: 20 }}>
+                  {loadingNftInProgress ? <LoadingOutlined /> : <ReloadOutlined />}
                 </Button>
               </Tooltip>
-              <Select 
+              <Select
                 defaultValue=""
                 showSearch
                 value={yourNftIdForSwap}
                 style={{ width: 220}}
-                onChange={(value) => setYourNftIdForSwap(value)}
+                onChange={value => setYourNftIdForSwap(value)}
               >
                 {myNftsOptions}
               </Select>
@@ -677,7 +634,10 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
                   cover={<img alt="nft image" src={yourNftForSwap.image} />}
                   loading={cardLoading}
                 >
-                  <Meta title={<a target="_blank" href={"https://opensea.io/assets/ethereum/0xecdeb3fec697649e08b63d93cab0bb168c35eec5/" + yourNftForSwap.id}>{`${yourNftForSwap.name}`}</a>} description={`Owner: ${yourNftForSwap.owner}`} />
+                  <Meta 
+                    title={<a target="_blank" rel="noreferrer" href={"https://opensea.io/assets/ethereum/0xecdeb3fec697649e08b63d93cab0bb168c35eec5/" + yourNftForSwap.id}>{`${yourNftForSwap.name}`}</a>} 
+                    description={<Address address={yourNftForSwap.owner} blockExplorer={blockExplorer} ensProvider={mainnetProvider} fontSize={15}/>}
+                  />
                 </Card>
                 :
                 <Empty 
@@ -703,7 +663,9 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
                   cover={<img alt="nft image" src={targetNftForSwap.image} />}
                   loading={cardLoading}
                 >
-                  <Meta title={<a target="_blank" href={"https://opensea.io/assets/ethereum/0xecdeb3fec697649e08b63d93cab0bb168c35eec5/" + targetNftForSwap.id}>{`${targetNftForSwap.name}`}</a>} description={`Owner: ${targetNftForSwap.owner}`} />
+                  <Meta 
+                    title={<a target="_blank" href={"https://opensea.io/assets/ethereum/0xecdeb3fec697649e08b63d93cab0bb168c35eec5/" + targetNftForSwap.id}>{`${targetNftForSwap.name}`}</a>} 
+                    description={<Address address={targetNftForSwap.owner} blockExplorer={blockExplorer} ensProvider={mainnetProvider} fontSize={15}/>} />
                 </Card>
                 :
                 <Empty 
@@ -717,6 +679,10 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
             <Button
               disabled={!yourNftForSwap || !targetNftForSwap}
               onClick={async() => {
+                const nftOnwer = await readContracts.TRANSPARENT_POWER.ownerOf(yourNftIdForSwap);
+                if (nftOnwer != address) {
+                  return;
+                }
                 tx(writeContracts.NftSwapperFactory.clone(readContracts.TRANSPARENT_POWER.address, yourNftForSwap.id, readContracts.TRANSPARENT_POWER.address, targetNftForSwap.id, { value: ethers.utils.parseEther("0.01") }));
               }}
             >
@@ -728,23 +694,13 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
             <Tooltip
               title={"Refresh offers"}
             >
-              <Button
-                onClick={getOffers}
-                style={{marginRight: 20}}
-                >
-                {
-                  
-                  offersLoading ?
-                  <LoadingOutlined />
-                  :
-                  <ReloadOutlined />
-                  
-                }
+              <Button onClick={getOffers} style={{marginRight: 20}}>
+                { offersLoading ? <LoadingOutlined /> : <ReloadOutlined /> }
               </Button>
-
             </Tooltip>
-            Offers
+            Offers for your NFTs
           </Title>
+          <Text type="secondary">Last 8 hours</Text>
           {
             offersLoading ? 
             <Skeleton active paragraph={{ rows: 2 }} />
@@ -766,7 +722,7 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
                           // filterOffers();
                         }}
                         >
-                        {item.yourNft.approved ? (<Space><CheckCircleTwoTone twoToneColor="#52c41a" /> Approved</Space>)  : "Approve"}
+                        {item.yourNft.approved ? (<Space><CheckCircleTwoTone twoToneColor="#52c41a" /> Approved</Space>) : "Approve"}
                       </Button>, 
                       <Button
                         type="primary"
@@ -774,8 +730,7 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
                         onClick={async () => {
                           try {
                             const contract = new ethers.Contract(item.contractAddress, SWAPPER_ABI, userSigner);
-                            console.log('Swapper', contract);
-                            tx(contract.swap({ value: ethers.utils.parseEther("0.01") }));
+                            tx(contract.swap({ value: ethers.utils.parseEther("0.01") }), getMyNfts);
                           }catch(e) {
                             console.error(e);  
                           }
@@ -789,12 +744,12 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
                           try {
                             const contract = new ethers.Contract(item.contractAddress, SWAPPER_ABI, userSigner)
                             tx(contract.cancelSwap());
-                          }catch(e) {
+                          } catch(e) {
                             console.error(e);  
                           }
                         }}
                       >
-                        <Space><CloseCircleOutlined/> Reject</Space>
+                        <Space><CloseCircleOutlined/> Cancel</Space>
                       </Button>
                     ]}
                   >
@@ -806,7 +761,6 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
                 );
               }}
             />
-
           }
           
           {/* <Title level={3}>Offer history</Title>
@@ -828,22 +782,20 @@ function HomeAlternate({ yourLocalBalance, readContracts, address, userSigner, t
           />
           */}
         </div>
-        :
-        <Row justify="center" align="middle">
-          <Result
-            icon={<WalletOutlined />}
-            title="Connect your wallet to start"
-            extra={<ConnectWallet web3Modal={web3Modal} loadWeb3Modal={loadWeb3Modal} logoutOfWeb3Modal={logoutOfWeb3Modal}/>}
-          />
-          
-        </Row>
-      }
+      )
+      :
+      (<Row justify="center" align="middle">
+        <Result
+          icon={<WalletOutlined />}
+          title="Connect your wallet to start"
+          extra={<ConnectWallet web3Modal={web3Modal} loadWeb3Modal={loadWeb3Modal} logoutOfWeb3Modal={logoutOfWeb3Modal}/>}
+        />    
+      </Row>)}
 
     </div>
     
 
   );
 }
-  
-  export default HomeAlternate;
-  
+
+export default HomeAlternate;

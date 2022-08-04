@@ -1194,17 +1194,31 @@ module.exports = {
   4: {
     contracts: {
       TRANSPARENT_POWER: {
-        address: "0xC3D447E5992e6eCD59f0Cd2b853eaeF4EBf27200",
-        abi: ERC721ABI
+        // address: "0xD66617713DA66195a8898abE50F02697BD677A65", //<- previous address
+        // address: "0x11b3459996fE5d04D738d31177aF98A2c16c82e0",
+        address: "0x227396b75328372db482da3208576d87fa9e8666",
+        abi: [...ERC721ABI, {
+          "inputs": [
+            {
+              "internalType": "string",
+              "name": "newBaseUri",
+              "type": "string"
+            }
+          ],
+          "name": "changeBaseUri",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        }]
       }
     }
   },
-  31337: {
-    contracts: {
-      TRANSPARENT_POWER: {
-        address: "0xA7D656eb2986d4FA8fbD699030Fc6DCc9D45f625",
-        abi: ERC721ABI
-      }
-    }
-  }
+  // 31337: {
+  //   contracts: {
+  //     TRANSPARENT_POWER: {
+  //       address: "0x3088344bDCF01aF651Fd85D781d3002a4f13Cc5d",
+  //       abi: ERC721ABI
+  //     }
+  //   }
+  // }
 };
