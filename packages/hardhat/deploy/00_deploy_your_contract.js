@@ -4,8 +4,8 @@ const { ethers } = require("hardhat");
 
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
-  const MY_BURNER_ADDRESS = "0x3088344bDCF01aF651Fd85D781d3002a4f13Cc5d";
-  const MY_BURNER_ADDRESS_2 = "0x4ed46E7812CcA9c199078e16D90eff94114c00e7";
+  // const MY_BURNER_ADDRESS = "0x3088344bDCF01aF651Fd85D781d3002a4f13Cc5d";
+  // const MY_BURNER_ADDRESS_2 = "0x4ed46E7812CcA9c199078e16D90eff94114c00e7";
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
@@ -50,9 +50,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     waitConfirmations: 1,
   });
   const NftSwapperFactory = await ethers.getContract("NftSwapperFactory", deployer);
-  await NftSwapperFactory.transferOwnership(
-    MY_BURNER_ADDRESS
-  );
+  // await NftSwapperFactory.transferOwnership(
+  //   MY_BURNER_ADDRESS
+  // );
 };
 
-module.exports.tags = ["NftSwapper", "SampleNft"];
+module.exports.tags = ["NftSwapper", "NftSwapperFactory"];

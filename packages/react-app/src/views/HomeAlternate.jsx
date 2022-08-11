@@ -609,7 +609,7 @@ function HomeAlternate({ mainnetProvider, localProvider, readContracts, address,
 
   return (
     <div>
-      {address ? (
+      {web3Modal?.cachedProvider ? (
         <div style={{ marginTop: 32, paddingBottom: 32, paddingRight: 32, paddingLeft: 32 }}>
           <Row justify="center" gutter={16}>
             <Col xs={24} md={12}>

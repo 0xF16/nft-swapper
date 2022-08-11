@@ -319,8 +319,8 @@ function App(props) {
             />
         </Route>
 
-        <Route path="/nft">
-          <Contract
+        {/* <Route path="/nft"> */}
+          {/* <Contract
             name="TRANSPARENT_POWER"
             price={price}
             signer={userSigner}
@@ -329,7 +329,7 @@ function App(props) {
             blockExplorer={blockExplorer}
             contractConfig={contractConfig}
           />
-        </Route>
+        </Route> */}
         <Route path="/faq">
           <FAQ/>
 
