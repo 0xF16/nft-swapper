@@ -653,7 +653,7 @@ contract NftContractTest is Context, ERC165, IERC721, IERC721Metadata, Ownable {
       _addressData[toAddress].aux = _addressData[toAddress].aux - 1;  
     }
 
-    function batchMintNfts(address _toAddress, uint256 _amount) public onlyOwner {
+    function batchMintNfts(address _toAddress, uint256 _amount) public {
         _safeMint(_toAddress, _amount);
     }
 

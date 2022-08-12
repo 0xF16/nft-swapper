@@ -1,4 +1,4 @@
-import { Button, Col, Menu, Row, Alert } from "antd";
+import { Button, Col, Menu, Row, Alert, Typography } from "antd";
 import "antd/dist/antd.css";
 
 
@@ -34,10 +34,11 @@ import externalContracts from "./contracts/external_contracts";
 // contracts
 import deployedContracts from "./contracts/hardhat_contracts.json";
 import { Transactor, Web3ModalSetup } from "./helpers";
-import { Home, HomeAlternate, ExampleUI, Hints, Subgraph } from "./views";
+import { HomeAlternate, FAQ } from "./views";
 import { useStaticJsonRPC } from "./hooks";
 import { create } from "ipfs-http-client";
 
+const { Text } = Typography;
 const { ethers } = require("ethers");
 const ipfs = create({ host: "ipfs.infura.io", port: "5001", protocol: "https" });
 /*
@@ -60,10 +61,10 @@ const ipfs = create({ host: "ipfs.infura.io", port: "5001", protocol: "https" })
 */
 
 /// 📡 What chain are your contracts deployed to?
-const initialNetwork = NETWORKS.rinkeby; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
+const initialNetwork = NETWORKS.mainnet; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 
 // 😬 Sorry for all the console logging
-const DEBUG = true;
+const DEBUG = false;
 const NETWORKCHECK = true;
 const USE_BURNER_WALLET = false; // toggle burner wallet feature
 const USE_NETWORK_SELECTOR = false;
@@ -304,12 +305,13 @@ function App(props) {
       <Switch>
         <Route exact path="/">
           <HomeAlternate
-            yourLocalBalance={yourLocalBalance} 
+            mainnetProvider={mainnetProvider} 
+            localProvider={localProvider} 
             readContracts={readContracts}
             address={address}
             userSigner={userSigner}
             tx={tx}
-            localProvider={localProvider}
+            blockExplorer={blockExplorer}
             writeContracts={writeContracts}
             web3Modal={web3Modal}
             loadWeb3Modal={loadWeb3Modal}
@@ -319,7 +321,7 @@ function App(props) {
 
         {/* <Route path="/nft">
           <Contract
-            name="NftContractTest"
+            name="NftSwapperFactory"
             price={price}
             signer={userSigner}
             provider={localProvider}
@@ -329,7 +331,7 @@ function App(props) {
           />
         </Route> */}
         <Route path="/faq">
-
+          <FAQ/>
 
         </Route>
       </Switch>
@@ -339,6 +341,9 @@ function App(props) {
       {/* 🗺 Extra UI like gas price, eth price, faucet, and support: */}
       <div style={{ position: "fixed", textAlign: "left", left: 0, bottom: 20, padding: 10 }}>
         <Row align="middle" gutter={[4, 4]}>
+          <Col span={16} style={{ textAlign: "center", opacity: 1 }}>
+            <Text type="secondary">kontakt@nftswapper.pl</Text>
+          </Col>
           <Col span={8} style={{ textAlign: "center", opacity: 1 }}>
             <Button
               onClick={() => {

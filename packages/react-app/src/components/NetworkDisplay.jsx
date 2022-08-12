@@ -89,7 +89,8 @@ function NetworkDisplay({
       );
     }
   } else {
-    networkDisplay = USE_NETWORK_SELECTOR ? null : (
+    // networkDisplay = USE_NETWORK_SELECTOR ? null :
+    networkDisplay = targetNetwork.name.indexOf("main") !== -1 ? "" : (
       <div style={{ zIndex: -1, position: "absolute", right: 150, top: 25, padding: 16, color: targetNetwork.color }}>
         {targetNetwork.name}
       </div>
