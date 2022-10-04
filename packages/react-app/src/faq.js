@@ -17,7 +17,7 @@ const faq = [
 	{
 		question: "4. 	Jaka jest zasada działania portalu NFT Swapper?",
 		answer: [
-            "Kiedy dwóch posiadaczy NFT z jednej kolekcji, zdecyduję się na ich wymianę, to wchodzą oni na portal https://nftswapper.pl i podłączaaj swój portfel kryptowalut do witryny (strona dostaje jedynie wgląd w posiadane przez ciebie tokeny). Cała wymiana składa się z 4 transakcji, z których każda musi zakończyć się sukcesem, aby nastąpiła wymiana, a mianowicie:",
+            "Kiedy dwóch posiadaczy NFT z jednej kolekcji zdecyduje się na ich wymianę, wchodzą oni na portal NFT SWAPPER i podłączają swój portfel kryptowalut do witryny (strona dostaje jedynie wgląd w posiadane przez Ciebie tokeny). Cała wymiana składa się z 4 transakcji, z których każda musi zakończyć się sukcesem, aby nastąpiła wymiana, a mianowicie:",
             "A)	Użytkownik1 wybiera z listy „Select your NFT” swój token, który chce wymienić.",
             "B) Następnie z listy „Swap for” wybiera NFT, na który chce się zamienić.",
             "C) Naciska przycisk „Create an offer”(Transakcja 1).",
@@ -43,7 +43,11 @@ const faq = [
  	},
 	{
 		question: "7. 	Czy można zrezygnować z istniejącej transakcji?",
-		answer: ["Tak – w każdej chwili można anulować ofertę naciskając przycisk „Reject”, jednakże musi się to odbyć przed ostateczną wymianą, czyli przed naciśnięciem przycisku „Swap”. Należy zaznaczyć, że jest to również operacja na blockchainie, więc trzeba liczyć się z poniesieniem kosztów gasu, w związku z jej wykonaniem. My nie pobieramy w tym miejscu żadnych opłat"]
+		answer: [
+			"Tak – w każdej chwili można anulować ofertę naciskając przycisk „Reject”, jednakże musi się to odbyć przed ostateczną wymianą, czyli przed naciśnięciem przycisku „Swap”. Należy zaznaczyć, że jest to również operacja na blockchainie, więc trzeba liczyć się z poniesieniem kosztów gasu, w związku z jej wykonaniem. My nie pobieramy w tym miejscu żadnych opłat",
+			"WAŻNE: REZYGNACJA Z TRANSAKCJI NIE POWODUJE ZWROTU ŚRODKóW POBRANYCH PODCZAS TWORZENIA OFERTY"
+		]
+
  	},
 	{
 		question: "8. 	Jaka jest przewaga portalu NFT Swapper nad innymi portalami do wymiany NFT?",
@@ -52,6 +56,14 @@ const faq = [
 	{
 		question: "9. 	Czy można NFT Swapper’a używać na innym urządzeniu niż komputer?",
 		answer: ["Tak – aplikacja działa na urządzeniach mobilnych, tj, smartfonach, tabletach etc."]
+	},
+	{
+		question: "10. 	Czy mogę odzyskać wydaną opłatę transakcyjną jeśli zrezygnuję ze stworzonej oferty?",
+		answer: ["Niestety nie zwracamy pobranej opłaty transakcyjnej. Zalecamy tworzenie przemyślanych ofert :)"]
+	},
+	{
+		question: "11. 	W jaki sposób mogę się skontaktować z twórcami?",
+		answer: ["Kontakt możliwy jest poprzez email: kontakt@nftswapper.pl, lub poprzez grupę telegramową dostępną poprzez kliknięcie \"Support\" w lewym dolnym rogu"]
 	},
 ];
 export default faq;

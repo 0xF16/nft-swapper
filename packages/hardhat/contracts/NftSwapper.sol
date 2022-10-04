@@ -28,7 +28,7 @@ contract NftSwapper {
     uint256 timeCreated;
     uint256 public swapFee;
 
-
+    bool initialized;
     bool public swapSucceeded;
     bool public swapCancelled;
 
@@ -39,6 +39,8 @@ contract NftSwapper {
         uint256 _nft2Id,
         uint256 _swapFee
     ) public {
+        require(initialized == false, "Already initialized");
+        initialized = true;
         nft1Contract = ERC721Token(_nft1);
         nft2Contract = ERC721Token(_nft2);
 
@@ -46,7 +48,7 @@ contract NftSwapper {
         nft2Id = _nft2Id;
 
         timeCreated = block.timestamp;
-        swapFee = _swapFee;
+        swapFee = _swapFee; 
     }
 
     function cancelSwap() public makerOrTaker {

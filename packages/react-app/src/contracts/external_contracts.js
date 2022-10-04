@@ -1196,7 +1196,7 @@ module.exports = {
       TRANSPARENT_POWER: {
         // address: "0xD66617713DA66195a8898abE50F02697BD677A65", //<- previous address
         // address: "0x11b3459996fE5d04D738d31177aF98A2c16c82e0",
-        address: "0x227396b75328372db482da3208576d87fa9e8666",
+        address: "0xfFc225C74D31F77d0028DE642fA0C15f11C96801",
         abi: [...ERC721ABI, {
           "inputs": [
             {
