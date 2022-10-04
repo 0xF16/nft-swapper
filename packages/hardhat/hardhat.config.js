@@ -29,7 +29,7 @@ const { isAddress, getAddress, formatUnits, parseUnits } = utils;
 //
 const defaultNetwork = "mainnet";
 
-const mainnetGwei = 21;
+const mainnetGwei = 12;
 
 function mnemonic() {
   try {
@@ -298,7 +298,7 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      mainnet: "DNXJA8RX2Q3VZ4URQIWP7Z68CJXQZSC6AW",
+      mainnet: process.env.ETHERSCAN_KEY,
       rinkeby: ""
       // add other network's API key here
     },

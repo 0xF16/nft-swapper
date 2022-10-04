@@ -318,8 +318,8 @@ function App(props) {
             logoutOfWeb3Modal={logoutOfWeb3Modal}
             />
         </Route>
-
-        {/* <Route path="/nft">
+{/* 
+        <Route path="/nft">
           <Contract
             name="NftSwapperFactory"
             price={price}
